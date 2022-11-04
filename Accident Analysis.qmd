@@ -1,0 +1,99 @@
+---
+title: "Accidents Analysis Across Italy"
+format:
+  html:
+    theme: default
+    toc: true
+    number-sections: true
+---
+
+*Required Libraries*
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(accidentr)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(scales)
+library(tidyr)
+```
+
+*Load the data*
+```{r}
+data(Ita_Regions)
+```
+
+*overview of the data*
+```{r}
+str(Ita_Regions)
+```
+
+*Extract the number of accidents everyday*
+
+```{r}
+dataACC <- Ita_Regions %>% 
+  count(DataAccadimento) %>%
+  mutate(dat = as.Date(DataAccadimento, format = "%m/%d/%Y")) %>% 
+  select(dat, n)
+#dataACC
+```
+
+*Exreact the day, month and year*
+
+```{r}
+data2 <- dataACC
+data2$Date_Time <- strptime(data2$dat, format = "%Y-%m-%d")
+data2$Day <- format(data2$Date_Time, "%d")
+data2$Month <- format(data2$Date_Time, "%m")
+data2$NameMonth <- format(data2$Date_Time, "%b")
+data2$Year <- format(data2$Date_Time, "%Y")
+
+```
+
+*aggregate number of accidents by year*
+
+```{r}
+mydata <- data2 %>% 
+  group_by(Year) %>%
+  summarise(total = sum(n)) 
+mydata
+```
+*Aggregate number of accidents by month spread across the years*
+```{r}
+mydata <- data2 %>% 
+  group_by(Year, Month, NameMonth) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) 
+mydata
+```
+
+# Data Visualization
+
+
+```{r}
+library(scales)
+
+plotdata <- Ita_Regions %>%
+  count(Gestione) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Gestione, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Gestione", 
+       y = "Percent", 
+       title  = "Participants by Gestione")
+```
+
+
+
+
+
