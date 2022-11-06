@@ -27,13 +27,26 @@ data(Ita_Regions)
 str(Ita_Regions)
 ```
 
+
+*Check for missing values*
+```{r}
+sapply(Ita_Regions, function(x) sum(is.na(x)))
+```
+*Check for unique values in every columns*
+```{r}
+sapply(Ita_Regions, function(x) length(unique(x)))
+```
+
+
+
 *Extract the number of accidents everyday*
 
 ```{r}
 dataACC <- Ita_Regions %>% 
   count(DataAccadimento) %>%
-  mutate(dat = as.Date(DataAccadimento, format = "%m/%d/%Y")) %>% 
-  select(dat, n)
+  #summarise(n = sum(n)) %>%
+  #mutate(dat = as.Date(DataAccadimento, format = "%m/%d/%Y"))  
+  group_by(DataAccadimento)
 #dataACC
 ```
 
@@ -41,7 +54,7 @@ dataACC <- Ita_Regions %>%
 
 ```{r}
 data2 <- dataACC
-data2$Date_Time <- strptime(data2$dat, format = "%Y-%m-%d")
+data2$Date_Time <- strptime(data2$DataAccadimento, format = "%d/%m/%Y")
 data2$Day <- format(data2$Date_Time, "%d")
 data2$Month <- format(data2$Date_Time, "%m")
 data2$NameMonth <- format(data2$Date_Time, "%b")
@@ -52,11 +65,28 @@ data2$Year <- format(data2$Date_Time, "%Y")
 *aggregate number of accidents by year*
 
 ```{r}
-mydata <- data2 %>% 
+mydata_total <- data2 %>% 
   group_by(Year) %>%
   summarise(total = sum(n)) 
-mydata
+mydata_total
 ```
+
+```{r}
+ggplot(mydata_total, 
+       aes(x = Year, 
+           y = total)) +
+  geom_line(size = 1.5, 
+            color = "lightgrey") +
+  geom_point(size = 3, 
+             color = "steelblue") +
+  labs(y = "Number of Accidents (years)", 
+       x = "Year",
+       title = "Number of Accidents changes over time",
+       subtitle = "Italy (2017-2021)",
+       caption = "Source: https://dati.inail.it/opendata/default/Infortuni/index.html")
+```
+
+
 *Aggregate number of accidents by month spread across the years*
 ```{r}
 mydata <- data2 %>% 
@@ -66,12 +96,11 @@ mydata <- data2 %>%
 mydata
 ```
 
+
 # Data Visualization
 
 
 ```{r}
-library(scales)
-
 plotdata <- Ita_Regions %>%
   count(Gestione) %>%
   mutate(pct = n / sum(n),
@@ -93,7 +122,36 @@ ggplot(plotdata,
        title  = "Participants by Gestione")
 ```
 
+```{r}
+library(treemapify)
+# create a treemap with tile labels
+plotdata <- Ita_Regions %>%
+  count(SettoreAttivitaEconomica)
 
+ggplot(plotdata, 
+       aes(fill = SettoreAttivitaEconomica, 
+           area = n, 
+           label = SettoreAttivitaEconomica)) +
+  geom_treemap() + 
+  geom_treemap_text(colour = "white", 
+                    place = "centre") +
+  labs(title = "Accidents by Location") +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+ggplot(Ita_Regions, 
+       aes(x = Eta, 
+           y= ..count.. / sum(..count..))) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white", 
+                 binwidth = 5) + 
+  labs(title="Participants by age", 
+       y = "Percent",
+       x = "Age") +
+  scale_y_continuous(labels = percent)
+```
 
 
 
