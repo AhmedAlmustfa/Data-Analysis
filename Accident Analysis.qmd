@@ -7,6 +7,77 @@ format:
     number-sections: true
 ---
 
+# Introduction
+
+In this Report we are going to analyse the dataset accidents, which represents Six-monthly accident data across al Italy grouped by "region", with respect to the place of occurrence, and it is downloaded from [INAIL](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, we collect the data by region from INAIL website and merge the data into one dataset, the second step we create a package in R for the dataset (`accidentr` ). However, the dataset contains 25 variables and 3052056 observations, and variables can be grouped into 7 types as the following:
+
+:::[.incremental]
+
+***A - temporal location of the injury:***
+
+:::{layout-ncol=1}
+1. detection date: it is the date of extraction of the data (recorded and validated) from the archives; temporally qualifies the information base;
+2. protocol date (of the case): it is the protocol date of the case;
+3. date of occurrence: is the date on which the accident occurred;
+4. date of definition: is the date of the prevailing administrative definition;
+5. date of death: is the date of death of the injured party following an accident;
+:::
+
+***B - geographical location of the accident:***
+
+:::{layout-ncol=1}
+6. place of occurrence: is the ISTAT code of the province where the accident occurred;
+:::
+
+
+***C - characteristics of the injured person:***
+
+:::{layout-ncol=1}
+7. identification of the injured person: internal code (for longitudinal analysis);
+8. gender: is the gender of the injured person;
+9. age: the age of the injured party on the `date of occurrence`, expressed in years of age;
+10. place of birth: cadastral code of the injured party's place of birth;
+:::
+
+***D - method of injury:***
+
+:::{layout-ncol=1}
+11. modality of occurrence: code of the modality (if `during work`, `in itinere`);
+12. with / without means of transport (involved): mode code (if "with" or "without");
+:::
+
+***E - administrative characteristics of the injury:***
+
+:::{layout-ncol=1}
+13. case identifier: internal code (for longitudinal analyzes);
+14. administrative definition: code that characterizes the administrative situation of the accident case (if `positive` or `negative`) or the `exempt` outcome or the `preliminary investigation` situation;
+15. administrative definition of the fatal outcome: code that characterizes the administrative situation of the case of an accident with a fatal outcome (if `positive` or `negative`) or the situation `in investigation`;
+16. indemnity: code of the type of indemnity (if `temporary`, `capital`, `direct annuity`, `survivors' annuity`);
+17. cause of negativity for the fatal outcome: code of the cause for which the case of an accident with a fatal outcome is defined as negative (if "activity not protected", for "lack of valid documentation", if for "lack of itinere ", for" lack of condition during work ", if for" fatal outcome not attributable to the event ", if" unprotected person ", if for" other causes of negativity ");
+:::
+
+***F - medico-legal characteristics of the accident:***
+
+:::{layout-ncol=1}
+18. degree of impairment: overall degree of impairment of the psychophysical integrity of the injured person;
+19. days indemnified: number of days indemnified;
+:::
+
+***G - characteristics of the employer:***
+
+:::{layout-ncol=1}
+20. employer: internal identification code of the employer (for longitudinal analyzes);
+21. territorial insurance position: internal code;
+22. sector of economic activity: this is the primary ATECO code of the insurer;
+23. management: if `agriculture`, `industry and services`, `on behalf of the state`;
+24. tariff management: if `industry`, `crafts`, `tertiary`, `other activities`;
+25. large tariff group: code of the large tariff group (whether `agricultural processing and food`,`chemical, paper and leather`, `construction and plant`, `energy and communications`, `wood and similar`, `metals and machinery`;` rock and glass mining `,` textiles and packaging `,`transport and warehouses `,` various activities `).
+
+
+:::
+
+:::
+
 *Required Libraries*
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(accidentr)
@@ -42,7 +113,7 @@ sapply(Ita_Regions, function(x) length(unique(x)))
 *Extract the number of accidents everyday*
 
 ```{r}
-dataACC <- Ita_Regions %>% 
+dataACC <- Ita_Regions %>%  
   count(DataAccadimento) %>%
   #summarise(n = sum(n)) %>%
   #mutate(dat = as.Date(DataAccadimento, format = "%m/%d/%Y"))  
@@ -63,13 +134,14 @@ data2$Year <- format(data2$Date_Time, "%Y")
 ```
 
 *aggregate number of accidents by year*
-
 ```{r}
 mydata_total <- data2 %>% 
   group_by(Year) %>%
   summarise(total = sum(n)) 
 mydata_total
 ```
+
+
 
 ```{r}
 ggplot(mydata_total, 
@@ -99,17 +171,20 @@ mydata
 
 # Data Visualization
 
+## The porportion between male and female accident
+
+The number of accidents occurring to male is about double the number of accident for females, and this result is reasonable because most of the desirous job are performed by male. 
 
 ```{r}
-plotdata <- Ita_Regions %>%
-  count(Gestione) %>%
+Gender <- Ita_Regions %>%
+  count(Genere) %>%
   mutate(pct = n / sum(n),
          pctlabel = paste0(round(pct*100), "%"))
 
 # plot the bars as percentages, 
 # in decending order with bar labels
-ggplot(plotdata, 
-       aes(x = reorder(Gestione, -pct),
+ggplot(Gender, 
+       aes(x = reorder(Genere, -pct),
            y = pct)) + 
   geom_bar(stat = "identity", 
            fill = "indianred3", 
@@ -117,10 +192,115 @@ ggplot(plotdata,
   geom_text(aes(label = pctlabel), 
             vjust = -0.25) +
   scale_y_continuous(labels = percent) +
-  labs(x = "Gestione", 
+  labs(x = "Genere", 
        y = "Percent", 
-       title  = "Participants by Gestione")
+       title  = "Participants by Genere")
 ```
+
+```{r}
+ggplot(Ita_Regions, 
+       aes(x = Eta, 
+           fill = Genere)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Age distribution by Gender")
+```
+
+
+
+## Accidents according to the characteristics of the employee
+
+### Management
+From the graph below we can see that, the first bin `I` which represents employees in the industry and services sectors and they have the highest proportion of accidents 81% with respect to employees in the two other sectors, while employees in the agricultural sector `A` have the lowest rate of accidents, which is about 5% only. For the the employees who are working on behalf of the state `S` they have 14% of the accidents across Italy.
+
+
+```{r}
+# create a pie chart with slice labels
+gestione <- Ita_Regions %>%
+  count(Gestione) %>%
+  arrange(desc(Gestione)) %>%
+  mutate(prop = round(n*100/sum(n), 1),
+         lab.ypos = cumsum(prop) - 0.5*prop)
+
+gestione$label <- paste0(gestione$Gestione, "\n",
+                         round(gestione$prop), "%")
+
+ggplot(gestione, 
+       aes(x = "", 
+           y = prop, 
+           fill = Gestione)) +
+  geom_bar(width = 1, 
+           stat = "identity", 
+           color = "black") +
+  geom_text(aes(y = lab.ypos, label = label), 
+            color = "black") +
+  coord_polar("y", 
+              start = 0, 
+              direction = -1) +
+  theme_void() +
+  theme(legend.position = "FALSE") +
+  labs(title = "Participants by Gestione")
+```
+
+
+### Accidents by tariff management
+Looking at the figure below, The highest rate of accidents are coming from Non-Defined tariff management. However, 25% of the accidents are registered by tertiary sector, industrial sector contributes by 22% of the total accidents, handcraft activities have a rate of 12% and the least contributing sector is other activities with only 9% of the total accidents.
+
+```{r}
+prop.table(table(Ita_Regions$GestioneTariffaria))
+```
+
+
+```{r}
+G_Tariffaria <- Ita_Regions %>%
+  count(GestioneTariffaria) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(G_Tariffaria, 
+       aes(x = reorder(GestioneTariffaria, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "GestioneTariffaria", 
+       y = "Percent", 
+       title  = "Participants by GestioneTariffaria")
+```
+
+### Accidents by large tariff group: code of the large tariff group
+
+```{r}
+prop.table(table(Ita_Regions$GrandeGruppoTariffario))
+```
+
+
+```{r}
+Grande_Tariffaria <- Ita_Regions %>%
+  count(GrandeGruppoTariffario) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(Grande_Tariffaria, 
+       aes(x = reorder(GrandeGruppoTariffario, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "GrandeGruppoTariffario", 
+       y = "Percent", 
+       title  = "Participants by GrandeGruppoTariffario")
+```
+From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of accidents which is 36% fro each while wood and similar zero percent of accidents, furthermore the rate of accidents for metals and machinery, rock and glass mining and textiles and packaging only 1% for each sector.
 
 ```{r}
 library(treemapify)
@@ -141,16 +321,9 @@ ggplot(plotdata,
 
 
 ```{r}
-ggplot(Ita_Regions, 
-       aes(x = Eta, 
-           y= ..count.. / sum(..count..))) +
-  geom_histogram(fill = "cornflowerblue", 
-                 color = "white", 
-                 binwidth = 5) + 
-  labs(title="Participants by age", 
-       y = "Percent",
-       x = "Age") +
-  scale_y_continuous(labels = percent)
+ggplot(Ita_Regions, aes(x = Eta)) +
+  geom_density(fill = "indianred3") + 
+  labs(title = "Accidents by age")
 ```
 
 
