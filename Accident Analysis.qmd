@@ -2,9 +2,11 @@
 title: "Accidents Analysis Across Italy"
 format:
   html:
-    theme: default
+    theme: flatly
+    code-fold: true
     toc: true
     number-sections: true
+    code-copy: true
 ---
 
 # Introduction
@@ -71,7 +73,8 @@ In this Report we are going to analyse the dataset accidents, which represents S
 22. sector of economic activity: this is the primary ATECO code of the insurer;
 23. management: if `agriculture`, `industry and services`, `on behalf of the state`;
 24. tariff management: if `industry`, `crafts`, `tertiary`, `other activities`;
-25. large tariff group: code of the large tariff group (whether `agricultural processing and food`,`chemical, paper and leather`, `construction and plant`, `energy and communications`, `wood and similar`, `metals and machinery`;` rock and glass mining `,` textiles and packaging `,`transport and warehouses `,` various activities `).
+25. large tariff group: code of the large tariff group (whether `agricultural processing and food`,`chemical, paper and leather`, `construction and plant`, `energy and communications`, `wood and similar`, `metals and machinery`;` rock and glass mining `,` textiles and packaging `,
+`transport and warehouses `,` various activities `).
 
 
 :::
@@ -79,6 +82,19 @@ In this Report we are going to analyse the dataset accidents, which represents S
 :::
 
 *Required Libraries*
+
+:::[.incremental]
+
+* accidentr
+* ggplot
+* dplyr
+* scales
+* tidyr
+* treemapify
+* plotly
+
+:::
+
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(accidentr)
 library(ggplot2)
@@ -86,6 +102,7 @@ library(plotly)
 library(dplyr)
 library(scales)
 library(tidyr)
+library(treemapify)
 ```
 
 *Load the data*
@@ -133,6 +150,9 @@ data2$Year <- format(data2$Date_Time, "%Y")
 
 ```
 
+# Data Visualization
+
+## The number of accidents by year
 *aggregate number of accidents by year*
 ```{r}
 mydata_total <- data2 %>% 
@@ -151,25 +171,53 @@ ggplot(mydata_total,
             color = "lightgrey") +
   geom_point(size = 3, 
              color = "steelblue") +
+  theme_minimal() +
   labs(y = "Number of Accidents (years)", 
        x = "Year",
        title = "Number of Accidents changes over time",
        subtitle = "Italy (2017-2021)",
-       caption = "Source: https://dati.inail.it/opendata/default/Infortuni/index.html")
-```
+       caption = "Source:          https://dati.inail.it/opendata/default/Infortuni/index.html")
 
+```
+From the graph we can tell that, 2017 has the highest rate of accidents while 2021 has the lowest rate of accidents. However, the frequency of accidents has decreased dramatically in 2020 and 2021 from the past years and this is quit reasonable due to the pandemic (Covid 19). 
+
+## The number of accidents by moths
 
 *Aggregate number of accidents by month spread across the years*
 ```{r}
 mydata <- data2 %>% 
   group_by(Year, Month, NameMonth) %>%
   summarise(total = sum(n)) %>%
-  spread(key = "Year", value = total) 
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
 mydata
+```
+```{r}
+colnames(mydata) <- c("Month", "NameMonth", "Year2017", "Year2018", "Year2019",
+                      "Year2020", "Year2021")
+write.csv(mydata, "df.csv")
+df <- read.csv("df.csv")
 ```
 
 
-# Data Visualization
+```{r}
+colors = c("Year 2017" ="red","Year 2018"= "blue",
+           "Year 2019" ="green","Year 2020"= "orange","Year 2021" = "black")
+ggplot(df, aes(x = Month)) + 
+  geom_line(aes(y = Year2017, color = "Year 2017"), size = 0.5) +
+  geom_line(aes(y = Year2018, color = "Year 2018"), size = 0.5) +
+  geom_line(aes(y = Year2019, color = "Year 2019"), size = 0.5) +
+  geom_line(aes(y = Year2020, color = "Year 2020"), size = 0.5) +
+  geom_line(aes(y = Year2021, color = "Year 2021"), size = 0.5) +
+  labs(x = "Months",
+         y = "number of accidents",
+         color = "Legend") +
+  scale_color_manual(values = colors) +
+  xlim(1,12) +
+  theme_minimal()
+  
+```
+From the graph we can see that, the number of accidents around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of accidents across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic, in March of 2020 the number of accidents declined sharply and hit the lowest value in May 2020 and in the same year the number of accidents hits the peek around November and this is the highest number of accidents recorded with respect to the other years. 
 
 ## The porportion between male and female accident
 
@@ -202,9 +250,12 @@ ggplot(Ita_Regions,
        aes(x = Eta, 
            fill = Genere)) +
   geom_density(alpha = 0.4) +
-  labs(title = "Age distribution by Gender")
+  labs(title = "Age distribution by Gender") +
+  theme_minimal()
 ```
 
+
+From the figure above, we can see that accidents among female workers is at the hihgest rate around the ages 30, 40 and 50, while the age with most frequent accidents among male workers is around the ages 40, 50 and 60. However, at ages from 20 -30 the frequency of accidents for the female workers is higher than male, while at the ages lower than 20 the accidents rate is higher among male workers with respect to female workers. For ages greater than 40 till 60 the accidents is higher for male compared to female.
 
 
 ## Accidents according to the characteristics of the employee
@@ -245,9 +296,7 @@ ggplot(gestione,
 ### Accidents by tariff management
 Looking at the figure below, The highest rate of accidents are coming from Non-Defined tariff management. However, 25% of the accidents are registered by tertiary sector, industrial sector contributes by 22% of the total accidents, handcraft activities have a rate of 12% and the least contributing sector is other activities with only 9% of the total accidents.
 
-```{r}
-prop.table(table(Ita_Regions$GestioneTariffaria))
-```
+
 
 
 ```{r}
@@ -274,9 +323,7 @@ ggplot(G_Tariffaria,
 
 ### Accidents by large tariff group: code of the large tariff group
 
-```{r}
-prop.table(table(Ita_Regions$GrandeGruppoTariffario))
-```
+
 
 
 ```{r}
@@ -303,7 +350,6 @@ ggplot(Grande_Tariffaria,
 From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of accidents which is 36% fro each while wood and similar zero percent of accidents, furthermore the rate of accidents for metals and machinery, rock and glass mining and textiles and packaging only 1% for each sector.
 
 ```{r}
-library(treemapify)
 # create a treemap with tile labels
 plotdata <- Ita_Regions %>%
   count(SettoreAttivitaEconomica)
@@ -315,16 +361,12 @@ ggplot(plotdata,
   geom_treemap() + 
   geom_treemap_text(colour = "white", 
                     place = "centre") +
-  labs(title = "Accidents by Location") +
+  labs(title = "Accidents by economical sector ativity") +
   theme(legend.position = "none")
 ```
 
 
-```{r}
-ggplot(Ita_Regions, aes(x = Eta)) +
-  geom_density(fill = "indianred3") + 
-  labs(title = "Accidents by age")
-```
+
 
 
 
