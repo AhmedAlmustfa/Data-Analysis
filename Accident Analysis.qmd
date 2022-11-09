@@ -157,8 +157,10 @@ data2$Year <- format(data2$Date_Time, "%Y")
 ```{r}
 mydata_total <- data2 %>% 
   group_by(Year) %>%
-  summarise(total = sum(n)) 
+  summarise(total = sum(n)) %>%
+  as.data.frame()
 mydata_total
+write.csv(mydata_total, "index.csv", row.names = FALSE)
 ```
 
 
@@ -179,9 +181,31 @@ ggplot(mydata_total,
        caption = "Source:          https://dati.inail.it/opendata/default/Infortuni/index.html")
 
 ```
-From the graph we can tell that, 2017 has the highest rate of accidents while 2021 has the lowest rate of accidents. However, the frequency of accidents has decreased dramatically in 2020 and 2021 from the past years and this is quit reasonable due to the pandemic (Covid 19). 
+From the graph we can tell that, 2017 has the highest rate of accidents while 2021 has the lowest rate of accidents. However, the frequency of accidents has decreased dramatically by -11.18% in 2020 form 2019 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of accident has declined from 2020 to 2021 by -1.47. In general, the frequency of accidents is showing a declining trend over the 5 years period except the year 2019 there was an increase by 0.081 from the year 2018.
 
-## The number of accidents by moths
+### Index of accidents
+
+```{r}
+Index <- read.csv("index.csv")
+Index$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
+Index$accident_Indx <- (Index$total/Index$Num_Wks)*100
+Index
+```
+
+```{r}
+colors = c("Index" ="blue")
+ggplot(Index, aes(x = Year)) + 
+  geom_line(aes(y = accident_Indx, color = "Index"), size = 0.5) +
+  labs(x = "Years",
+         y = "Percentage of accidents ",
+         color = "Legend") +
+  scale_color_manual(values = colors) +
+  theme_minimal()
+  
+```
+The graph illustrate the index of accidents `(Number of accidents/Number of workers)` in yearly bases, from the graph we can see that the index of accidents have a downward trend over the years, with 3.89% at the year 2017 and 3.27% at the year 2021 which shows that this percentage of the accidents has declined by 0.62%. 
+
+## The number of accidents by months
 
 *Aggregate number of accidents by month spread across the years*
 ```{r}
@@ -218,6 +242,8 @@ ggplot(df, aes(x = Month)) +
   
 ```
 From the graph we can see that, the number of accidents around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of accidents across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic, in March of 2020 the number of accidents declined sharply and hit the lowest value in May 2020 and in the same year the number of accidents hits the peek around November and this is the highest number of accidents recorded with respect to the other years. 
+
+
 
 ## The porportion between male and female accident
 
@@ -323,9 +349,6 @@ ggplot(G_Tariffaria,
 
 ### Accidents by large tariff group: code of the large tariff group
 
-
-
-
 ```{r}
 Grande_Tariffaria <- Ita_Regions %>%
   count(GrandeGruppoTariffario) %>%
@@ -349,6 +372,8 @@ ggplot(Grande_Tariffaria,
 ```
 From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of accidents which is 36% fro each while wood and similar zero percent of accidents, furthermore the rate of accidents for metals and machinery, rock and glass mining and textiles and packaging only 1% for each sector.
 
+## The number of accidents by economical sector ativity
+
 ```{r}
 # create a treemap with tile labels
 plotdata <- Ita_Regions %>%
@@ -364,7 +389,117 @@ ggplot(plotdata,
   labs(title = "Accidents by economical sector ativity") +
   theme(legend.position = "none")
 ```
+```{r, results='hide'}
+sort(prop.table(table(Ita_Regions$SettoreAttivitaEconomica)), decreasing = TRUE) #prop.table(table(Ita_Regions$SettoreAttivitaEconomica))
+```
 
+From the figure above we can see that 34.78 of the accidents are not identified as to which economical sector is belong. However, the sector with high proportion of accidents (0.0536) is Q86 `Assitenza Sanitaria` while the sector with the lowest proportion of accidents(0.000004%) is B07 `Estrazione di Minerali Metallifri`. Furthermore, `Commercio al dettalio (escluso quello di autoveicoli e di motocicli)` G47 has 0.04 contribution to the total number of accidents, while F43 `Lavori di costruzione specializzati` has 0.039 from the proportion of accidents. 
+
+## The number of accidents by province
+
+```{r}
+# create a treemap with tile labels
+plotprov <- Ita_Regions %>%
+  count(LuogoAccadimento)
+
+ggplot(plotprov, 
+       aes(fill = LuogoAccadimento, 
+           area = n, 
+           label = LuogoAccadimento)) +
+  geom_treemap() + 
+  geom_treemap_text(colour = "white", 
+                    place = "centre") +
+  labs(title = "Accidents by province") +
+  theme(legend.position = "none")
+```
+```{r, results='hide'}
+sort(prop.table(table(Ita_Regions$LuogoAccadimento)), decreasing = TRUE)
+```
+
+The graph illustrate the number proportions of accidents by province, we can see that 0.065 of accidents are coming from 15 `province of Milan` which is the highest proportion of accidents compared to other provinces, the second highest proportion of accidents are occurred in 58 `Rom`e with proportion of accidents equals to 0.054, the third province with high proportion of accidents is 1 `Turin`, while the province with the lowest proportion of accidents is 94 `Isernia` which is about 0.00086, the second lowest proportion of accidents is occurred in 101 `Crotone` with proportion of accidents equals to 0.00115 and the third lowest frequent of accidents is coming from 102 `Vibo Valentia` whis is about 0.00124. However, the three province with the lowest frequency of accidents are located in south Italy while the province with high frequency of accidents are in the south and center of Italy.
+
+# Analyses of impairment, indemnity, indemnified days
+## Analyse of Indemnity
+
+```{r}
+idemnity <- Ita_Regions %>%
+  count(Indennizzo) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(idemnity, 
+       aes(x = reorder(Indennizzo, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Indemnity", 
+       y = "Percent", 
+       title  = "Participants by Indemnity")
+```
+```{r}
+sort(prop.table(table(Ita_Regions$Indennizzo)), decreasing = TRUE)
+```
+
+The figure above illustrates the types of indemnity resulting from the accidents, which are `temporary`, `capital`, `direct annuity`and `survivors' annuity`. From the graph we can see that 52% of accidents indemnity are considered to be `TE` temporary, while 4% of the indemnity is considered as capital `CA` and 1% are going directly to annuity `RD` and about 0.1% are survivors' annuity `rs`. 
+
+## Admministrative decision of the fatal outcome
+
+```{r}
+fetal <- Ita_Regions %>%
+  count(DefinizioneAmministrativaEsitoMortale) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(fetal, 
+       aes(x = reorder(DefinizioneAmministrativaEsitoMortale, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Indemnity", 
+       y = "Percent", 
+       title  = "Participants by Indemnity")
+```
+
+
+```{r}
+sort(prop.table(table(Ita_Regions$DefinizioneAmministrativaEsitoMortale)), decreasing = TRUE)
+```
+The figure above shows the decisions about the accidents, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the accidents are not defined. However, the accidents with a fatal decision are the positive cases which is 0.125% of the total accidents, while the accidents that are not fatal which is the negative cases are 0.092% of the accidents and the accidents that its outcome are not decided yet `in invstigation` are 0.003% of the total accidents.
+
+
+## Number of days compensated
+
+## Location of the accidents
+
+Analizza anche grado di menomazione, quanti sono i mortali, luogo (puoi fare delle mappe), indennizzo, giorni indennizzati.
+
+ 
+
+Interessa la combinazione grado menomazione, indennizzo, giorni indennizzati
+Interessa grado menomazione > 40
+Interessa grado menomazione > 60
+
+They are important for the definition of total and permanent disability
+
+```{r, message=FALSE}
+library(maptools)
+library(ggalt)
+library(ggthemes)
+library(tibble)
+library(viridis)
+```
 
 
 
