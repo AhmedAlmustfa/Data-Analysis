@@ -45,7 +45,7 @@ In this Report we are going to analyse the dataset accidents, which represents S
 
 :::{layout-ncol=1}
 11. modality of occurrence: code of the modality (if `during work`, `in itinere`);
-12. with / without means of transport (involved): mode code (if "with" or "without");
+12. with / without means of transport (involved): mode code (if `with` or `without`);
 :::
 
 ***E - administrative characteristics of the injury:***
@@ -103,6 +103,7 @@ library(dplyr)
 library(scales)
 library(tidyr)
 library(treemapify)
+library(reactable)
 ```
 
 *Load the data*
@@ -159,10 +160,18 @@ mydata_total <- data2 %>%
   group_by(Year) %>%
   summarise(total = sum(n)) %>%
   as.data.frame()
-mydata_total
 write.csv(mydata_total, "index.csv", row.names = FALSE)
 ```
 
+```{r}
+reactable(
+  mydata_total,
+  columns = list(
+    Year = colDef(name = "Years"),
+    total= colDef(name = "Total of accidents")
+  )
+)
+```
 
 
 ```{r}
@@ -188,8 +197,20 @@ From the graph we can tell that, 2017 has the highest rate of accidents while 20
 ```{r}
 Index <- read.csv("index.csv")
 Index$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
-Index$accident_Indx <- (Index$total/Index$Num_Wks)*100
-Index
+Index$accident_Indx <- round((Index$total/Index$Num_Wks)*100, 4)
+#Index
+```
+
+```{r}
+reactable(
+  Index,
+  columns = list(
+    Year = colDef(name = "Years"),
+    total= colDef(name = "Total of accidents"),
+    Num_Wks = colDef(name = "Number of workers"),
+    accident_Indx = colDef(name = "Accident Index")
+  )
+)
 ```
 
 ```{r}
@@ -214,13 +235,19 @@ mydata <- data2 %>%
   summarise(total = sum(n)) %>%
   spread(key = "Year", value = total) %>%
   as.data.frame()
-mydata
+#mydata
 ```
 ```{r}
 colnames(mydata) <- c("Month", "NameMonth", "Year2017", "Year2018", "Year2019",
                       "Year2020", "Year2021")
 write.csv(mydata, "df.csv")
 df <- read.csv("df.csv")
+```
+
+```{r}
+reactable(
+  df[,-1]
+)
 ```
 
 
@@ -283,6 +310,65 @@ ggplot(Ita_Regions,
 
 From the figure above, we can see that accidents among female workers is at the hihgest rate around the ages 30, 40 and 50, while the age with most frequent accidents among male workers is around the ages 40, 50 and 60. However, at ages from 20 -30 the frequency of accidents for the female workers is higher than male, while at the ages lower than 20 the accidents rate is higher among male workers with respect to female workers. For ages greater than 40 till 60 the accidents is higher for male compared to female.
 
+## Modality of occurrence
+
+```{r}
+# create a pie chart with slice labels
+Mod_acc <- Ita_Regions %>%
+  count(ModalitaAccadimento) %>%
+  arrange(desc(ModalitaAccadimento)) %>%
+  mutate(prop = round(n*100/sum(n), 1),
+         lab.ypos = cumsum(prop) - 0.5*prop)
+
+Mod_acc$label <- paste0(Mod_acc$ModalitaAccadimento, "\n",
+                         round(Mod_acc$prop), "%")
+
+ggplot(Mod_acc, 
+       aes(x = "", 
+           y = prop, 
+           fill = ModalitaAccadimento)) +
+  geom_bar(width = 1, 
+           stat = "identity", 
+           color = "black") +
+  geom_text(aes(y = lab.ypos, label = label), 
+            color = "black") +
+  coord_polar("y", 
+              start = 0, 
+              direction = -1) +
+  theme_void() +
+  theme(legend.position = "FALSE") +
+  labs(title = "Participants by ModalitaAccadimento")
+```
+
+## Accidents with and without means of transport
+
+```{r}
+# create a pie chart with slice labels
+Mod <- Ita_Regions %>%
+  count(ConSenzaMezzoTrasporto) %>%
+  arrange(desc(ConSenzaMezzoTrasporto)) %>%
+  mutate(prop = round(n*100/sum(n), 1),
+         lab.ypos = cumsum(prop) - 0.5*prop)
+
+Mod$label <- paste0(Mod$ConSenzaMezzoTrasporto, "\n",
+                         round(Mod$prop), "%")
+
+ggplot(Mod, 
+       aes(x = "", 
+           y = prop, 
+           fill = ConSenzaMezzoTrasporto)) +
+  geom_bar(width = 1, 
+           stat = "identity", 
+           color = "black") +
+  geom_text(aes(y = lab.ypos, label = label), 
+            color = "black") +
+  coord_polar("y", 
+              start = 0, 
+              direction = -1) +
+  theme_void() +
+  theme(legend.position = "FALSE") +
+  labs(title = "Participants by ConSenzaMezzoTrasporto")
+```
 
 ## Accidents according to the characteristics of the employee
 
@@ -479,19 +565,8 @@ sort(prop.table(table(Ita_Regions$DefinizioneAmministrativaEsitoMortale)), decre
 The figure above shows the decisions about the accidents, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the accidents are not defined. However, the accidents with a fatal decision are the positive cases which is 0.125% of the total accidents, while the accidents that are not fatal which is the negative cases are 0.092% of the accidents and the accidents that its outcome are not decided yet `in invstigation` are 0.003% of the total accidents.
 
 
-## Number of days compensated
 
 ## Location of the accidents
-
-Analizza anche grado di menomazione, quanti sono i mortali, luogo (puoi fare delle mappe), indennizzo, giorni indennizzati.
-
- 
-
-Interessa la combinazione grado menomazione, indennizzo, giorni indennizzati
-Interessa grado menomazione > 40
-Interessa grado menomazione > 60
-
-They are important for the definition of total and permanent disability
 
 ```{r, message=FALSE}
 library(maptools)
@@ -502,6 +577,77 @@ library(viridis)
 ```
 
 
+# Total and permanent disability 
+Total permanent disability (TPD) is a condition in which an individual is no longer able to work due to injuries. Total permanent disability, also called permanent total disability, applies to cases in which the individual may never be able to work again.
+
+## Degree of impairment > 60
+
+```{r}
+data(Ita_Regions)
+
+GradoMenomazione_60 <- select(Ita_Regions, 
+                              GradoMenomazione, 
+                              Indennizzo,
+                              GiorniIndennizzati) %>%
+          filter(GradoMenomazione > 60)
+#head(GradoMenomazione_60) 
+sapply(GradoMenomazione_60, function(x) length(unique(x)))
+```
+The table below shows information about the degree of impairment when it is more than 40:
+```{r}
+reactable(GradoMenomazione_60, searchable = TRUE, minRows = 10)
+```
+
+```{r}
+prop.table(table(GradoMenomazione_60$Indennizzo))
+```
+
+
+
+```{r}
+ggplot(GradoMenomazione_60, 
+       aes(x = GiorniIndennizzati, 
+           fill = Indennizzo)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Salary distribution by rank")
+```
+## Degree of impairment > 40
+
+```{r}
+data(Ita_Regions)
+
+GradoMenomazione_40 <- select(Ita_Regions, 
+                              GradoMenomazione, 
+                              Indennizzo,
+                              GiorniIndennizzati) %>%
+          filter(GradoMenomazione > 40)
+#head(GradoMenomazione_40)
+sapply(GradoMenomazione_40, function(x) length(unique(x)))
+```
+The table below shows information about the degree of impairment when it is more than 60:
+
+```{r}
+reactable(GradoMenomazione_40, searchable = TRUE, minRows = 10)
+```
+```{r}
+prop.table(table(GradoMenomazione_40$Indennizzo))
+```
+
+
+```{r}
+ggplot(GradoMenomazione_40, 
+       aes(x = GiorniIndennizzati, 
+           fill = Indennizzo)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Salary distribution by rank")
+```
+
+```{r}
+ggplot(GradoMenomazione_60, 
+       aes(x = Indennizzo, 
+           y = GradoMenomazione)) +
+  geom_bar(stat = "identity")
+```
 
 
 
