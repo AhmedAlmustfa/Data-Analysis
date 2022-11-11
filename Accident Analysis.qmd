@@ -104,6 +104,7 @@ library(scales)
 library(tidyr)
 library(treemapify)
 library(reactable)
+library(ltm)
 ```
 
 *Load the data*
@@ -118,11 +119,11 @@ str(Ita_Regions)
 
 
 *Check for missing values*
-```{r}
+```{r, results='hide'}
 sapply(Ita_Regions, function(x) sum(is.na(x)))
 ```
 *Check for unique values in every columns*
-```{r}
+```{r, results='hide'}
 sapply(Ita_Regions, function(x) length(unique(x)))
 ```
 
@@ -337,7 +338,7 @@ ggplot(Mod_acc,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Participants by ModalitaAccadimento")
+  labs(title = "Accidents by Modality of occurrence")
 ```
 
 ## Accidents with and without means of transport
@@ -367,7 +368,7 @@ ggplot(Mod,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Participants by ConSenzaMezzoTrasporto")
+  labs(title = "Accidents with and without means of transport")
 ```
 
 ## Accidents according to the characteristics of the employee
@@ -401,7 +402,7 @@ ggplot(gestione,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Participants by Gestione")
+  labs(title = "Accidents by Management")
 ```
 
 
@@ -428,9 +429,9 @@ ggplot(G_Tariffaria,
   geom_text(aes(label = pctlabel), 
             vjust = -0.25) +
   scale_y_continuous(labels = percent) +
-  labs(x = "GestioneTariffaria", 
+  labs(x = "tariff management", 
        y = "Percent", 
-       title  = "Participants by GestioneTariffaria")
+       title  = "Accidents by tariff management")
 ```
 
 ### Accidents by large tariff group: code of the large tariff group
@@ -452,9 +453,9 @@ ggplot(Grande_Tariffaria,
   geom_text(aes(label = pctlabel), 
             vjust = -0.25) +
   scale_y_continuous(labels = percent) +
-  labs(x = "GrandeGruppoTariffario", 
+  labs(x = "large tariff group", 
        y = "Percent", 
-       title  = "Participants by GrandeGruppoTariffario")
+       title  = "Accidents by large tariff group")
 ```
 From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of accidents which is 36% fro each while wood and similar zero percent of accidents, furthermore the rate of accidents for metals and machinery, rock and glass mining and textiles and packaging only 1% for each sector.
 
@@ -568,86 +569,157 @@ The figure above shows the decisions about the accidents, which are `positive`, 
 
 ## Location of the accidents
 
-```{r, message=FALSE}
-library(maptools)
-library(ggalt)
-library(ggthemes)
-library(tibble)
-library(viridis)
-```
 
 
-# Total and permanent disability 
+# Total and permanent disability
+
 Total permanent disability (TPD) is a condition in which an individual is no longer able to work due to injuries. Total permanent disability, also called permanent total disability, applies to cases in which the individual may never be able to work again.
+
+
 
 ## Degree of impairment > 60
 
 ```{r}
 data(Ita_Regions)
+GradoMenomazione_60 <- Ita_Regions[, c("GradoMenomazione","Indennizzo", "GiorniIndennizzati")] 
 
-GradoMenomazione_60 <- select(Ita_Regions, 
-                              GradoMenomazione, 
-                              Indennizzo,
-                              GiorniIndennizzati) %>%
-          filter(GradoMenomazione > 60)
-#head(GradoMenomazione_60) 
-sapply(GradoMenomazione_60, function(x) length(unique(x)))
+GradoMenomazione_60 <-  GradoMenomazione_60 %>%
+                       filter(GradoMenomazione > 60)
 ```
-The table below shows information about the degree of impairment when it is more than 40:
+
+
+
+
+
+The table below shows information about the degree of impairment when it is more than 60:
 ```{r}
 reactable(GradoMenomazione_60, searchable = TRUE, minRows = 10)
 ```
 
+
 ```{r}
-prop.table(table(GradoMenomazione_60$Indennizzo))
+grad_60 <- GradoMenomazione_60 %>%
+  count(Indennizzo) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(grad_60, 
+       aes(x = reorder(Indennizzo, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Indennizzo", 
+       y = "Percent", 
+       title  = "Participants by Indennizzo")
 ```
 
+The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 60 as TPA, then from the table above we can see that 94% of the workers with degree of impairment greater than 60 are entitled to immediate annuity `RD`, which offers an immediate income to the annuitant, and 6% are entitled to survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. 
 
+To check if there is a relation between the days of compensation and indemnity a Biserial correlation test is applied.
+
+```{r}
+biserial.cor(GradoMenomazione_60$GiorniIndennizzati, GradoMenomazione_60$Indennizzo)
+```
+
+From the test we can see that there is almost no correlation between the days compensated and indemnity.
 
 ```{r}
 ggplot(GradoMenomazione_60, 
-       aes(x = GiorniIndennizzati, 
-           fill = Indennizzo)) +
-  geom_density(alpha = 0.4) +
-  labs(title = "Salary distribution by rank")
+       aes(x = factor(Indennizzo,
+                      labels = c("Dirict annuity",
+                                 "Survivors' annuity")), 
+           y = GiorniIndennizzati, 
+           color = Indennizzo)) +
+  geom_boxplot(size=1,
+               outlier.shape = 1,
+               outlier.color = "black",
+               outlier.size  = 3) +
+  geom_jitter(alpha = 0.5, 
+              width=.2) + 
+  #scale_y_continuous(label = dollar) +
+  labs(title = "Days of compensation according to indemnity",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
 ```
+
+
 ## Degree of impairment > 40
 
 ```{r}
 data(Ita_Regions)
+GradoMenomazione_40 <- Ita_Regions[, c("GradoMenomazione","Indennizzo", "GiorniIndennizzati")] 
 
-GradoMenomazione_40 <- select(Ita_Regions, 
-                              GradoMenomazione, 
-                              Indennizzo,
-                              GiorniIndennizzati) %>%
-          filter(GradoMenomazione > 40)
-#head(GradoMenomazione_40)
-sapply(GradoMenomazione_40, function(x) length(unique(x)))
+GradoMenomazione_40 <-  GradoMenomazione_40 %>%
+                       filter(GradoMenomazione > 40)
 ```
+
 The table below shows information about the degree of impairment when it is more than 60:
 
 ```{r}
 reactable(GradoMenomazione_40, searchable = TRUE, minRows = 10)
 ```
+
 ```{r}
-prop.table(table(GradoMenomazione_40$Indennizzo))
+grad_40 <- GradoMenomazione_40 %>%
+  count(Indennizzo) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(grad_40, 
+       aes(x = reorder(Indennizzo, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Indennizzo", 
+       y = "Percent", 
+       title  = "Participants by Indennizzo")
 ```
 
+The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 40 as TPA, then from the table above we can see that 98% of the workers with degree of impairment greater than 40 are entitled to immediate annuity `RD`, which offers an immediate income to the annuitant, and 2% are entitled to survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. However, when the insurance company decrease the threshold of the degree of impairment to 40, the number of persons defined as TPD is 2349, while when the threshold of the degree of impairment is 60, the number of persons defined as TPD is 856. 
 
+
+```{r}
+biserial.cor(GradoMenomazione_40$GiorniIndennizzati, GradoMenomazione_40$Indennizzo)
+```
+
+From the test we can see that there is almost no correlation between the days compensated and indemnity.
 ```{r}
 ggplot(GradoMenomazione_40, 
-       aes(x = GiorniIndennizzati, 
-           fill = Indennizzo)) +
-  geom_density(alpha = 0.4) +
-  labs(title = "Salary distribution by rank")
+       aes(x = factor(Indennizzo,
+                      labels = c("Dirict annuity",
+                                 "Survivors' annuity")), 
+           y = GiorniIndennizzati, 
+           color = Indennizzo)) +
+  geom_boxplot(size=1,
+               outlier.shape = 1,
+               outlier.color = "black",
+               outlier.size  = 3) +
+  geom_jitter(alpha = 0.5, 
+              width=.2) + 
+  #scale_y_continuous(label = dollar) +
+  labs(title = "Days of compensation according to indemnity",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
 ```
 
-```{r}
-ggplot(GradoMenomazione_60, 
-       aes(x = Indennizzo, 
-           y = GradoMenomazione)) +
-  geom_bar(stat = "identity")
-```
 
 
 
