@@ -11,7 +11,7 @@ format:
 
 # Introduction
 
-In this Report we are going to analyse the dataset accidents, which represents Six-monthly accident data across al Italy grouped by "region", with respect to the place of occurrence, and it is downloaded from [INAIL](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, we collect the data by region from INAIL website and merge the data into one dataset, the second step we create a package in R for the dataset (`accidentr` ). However, the dataset contains 25 variables and 3052056 observations, and variables can be grouped into 7 types as the following:
+In this Report we are going to analyse the dataset Injuries among workers, which represents Six-monthly injuries data across all Italy grouped by "region", and it is downloadable from [INAIL](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, we collect the data by region from INAIL website and merge the data into one dataset, the second step we create a package in R for the dataset (`accidentr` ). The dataset contains 25 variables and 3052056 observations, and the variables are grouped into 7 types as the following:
 
 :::[.incremental]
 
@@ -105,6 +105,10 @@ library(tidyr)
 library(treemapify)
 library(reactable)
 library(ltm)
+library(highcharter)
+library(purrr)
+library(geojsonio)
+library(httr)
 ```
 
 *Load the data*
@@ -116,6 +120,9 @@ data(Ita_Regions)
 ```{r}
 str(Ita_Regions)
 ```
+
+
+
 
 
 *Check for missing values*
@@ -152,9 +159,10 @@ data2$Year <- format(data2$Date_Time, "%Y")
 
 ```
 
-# Data Visualization
+# Data Visualization and Analysis
 
-## The number of accidents by year
+
+## The number of Injuries by year
 *aggregate number of accidents by year*
 ```{r}
 mydata_total <- data2 %>% 
@@ -186,48 +194,14 @@ ggplot(mydata_total,
   theme_minimal() +
   labs(y = "Number of Accidents (years)", 
        x = "Year",
-       title = "Number of Accidents changes over time",
+       title = "Number of injuries over time",
        subtitle = "Italy (2017-2021)",
        caption = "Source:          https://dati.inail.it/opendata/default/Infortuni/index.html")
 
 ```
-From the graph we can tell that, 2017 has the highest rate of accidents while 2021 has the lowest rate of accidents. However, the frequency of accidents has decreased dramatically by -11.18% in 2020 form 2019 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of accident has declined from 2020 to 2021 by -1.47. In general, the frequency of accidents is showing a declining trend over the 5 years period except the year 2019 there was an increase by 0.081 from the year 2018.
+From the graph we can tell that, 2017 has the highest rate of injuries while 2021 has the lowest rate of injuries However, the frequency of injuries has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of injuries has declined from 2020 to 2021 by -1.47%. In general, the frequency of injuries is showing a declining trend over thepast 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
 
-### Index of accidents
-
-```{r}
-Index <- read.csv("index.csv")
-Index$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
-Index$accident_Indx <- round((Index$total/Index$Num_Wks)*100, 4)
-#Index
-```
-
-```{r}
-reactable(
-  Index,
-  columns = list(
-    Year = colDef(name = "Years"),
-    total= colDef(name = "Total of accidents"),
-    Num_Wks = colDef(name = "Number of workers"),
-    accident_Indx = colDef(name = "Accident Index")
-  )
-)
-```
-
-```{r}
-colors = c("Index" ="blue")
-ggplot(Index, aes(x = Year)) + 
-  geom_line(aes(y = accident_Indx, color = "Index"), size = 0.5) +
-  labs(x = "Years",
-         y = "Percentage of accidents ",
-         color = "Legend") +
-  scale_color_manual(values = colors) +
-  theme_minimal()
-  
-```
-The graph illustrate the index of accidents `(Number of accidents/Number of workers)` in yearly bases, from the graph we can see that the index of accidents have a downward trend over the years, with 3.89% at the year 2017 and 3.27% at the year 2021 which shows that this percentage of the accidents has declined by 0.62%. 
-
-## The number of accidents by months
+## The number of injuries by months
 
 *Aggregate number of accidents by month spread across the years*
 ```{r}
@@ -262,20 +236,191 @@ ggplot(df, aes(x = Month)) +
   geom_line(aes(y = Year2020, color = "Year 2020"), size = 0.5) +
   geom_line(aes(y = Year2021, color = "Year 2021"), size = 0.5) +
   labs(x = "Months",
-         y = "number of accidents",
+         y = "number of injuries",
          color = "Legend") +
   scale_color_manual(values = colors) +
   xlim(1,12) +
   theme_minimal()
   
 ```
-From the graph we can see that, the number of accidents around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of accidents across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic, in March of 2020 the number of accidents declined sharply and hit the lowest value in May 2020 and in the same year the number of accidents hits the peek around November and this is the highest number of accidents recorded with respect to the other years. 
+From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
 
 
+# Index of injuries
 
-## The porportion between male and female accident
+## Index of Injuries by year
 
-The number of accidents occurring to male is about double the number of accident for females, and this result is reasonable because most of the desirous job are performed by male. 
+```{r}
+Index <- read.csv("index.csv")
+Index$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
+Index$accident_Indx <- round((Index$total/Index$Num_Wks)*100, 4)
+#Index
+```
+
+```{r}
+reactable(
+  Index,
+  columns = list(
+    Year = colDef(name = "Years"),
+    total= colDef(name = "Total of accidents"),
+    Num_Wks = colDef(name = "Number of workers"),
+    accident_Indx = colDef(name = "Accident Index")
+  )
+)
+```
+
+```{r}
+colors = c("Index" ="blue")
+ggplot(Index, aes(x = Year)) + 
+  geom_line(aes(y = accident_Indx, color = "Index"), size = 0.5) +
+  labs(x = "Years",
+         y = "Percentage of injuries ",
+         color = "Legend") +
+  scale_color_manual(values = colors) +
+  theme_minimal()
+  
+```
+
+The graph illustrates the index of injury `(Number of accidents/Number of workers)` in yearly bases, the number of workers is obtained from [Bancadati](https://bancadaticsa.inail.it/bancadaticsa/bancastatistica.asp?cod=0), from the graph we can see that the index of injuries have a downward trend over the years, with 3.89% at the year 2017 and 3.27%. The year 2021 shows the percentage of the injuries has declined by 0.62% from the year 2020. 
+
+## Index of Injuries by economic sector
+
+
+```{r}
+library(readxl)
+eco_set_index <- read_excel("data_index.xlsx", sheet = 1)
+colnames(eco_set_index) <- c("economic_sector", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(eco_set_index)
+```
+## Index of Injuries by Tariff Inail
+
+```{r}
+Tari_inail <- read_excel("data_index.xlsx", sheet = 2)
+colnames(Tari_inail) <- c("Tariff_Inail", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(Tari_inail)
+  
+```
+## Index of Injuries by management tariff
+
+```{r}
+gestione <- read_excel("data_index.xlsx", sheet = 3)
+colnames(gestione) <- c("gestione_tarif", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(gestione)
+```
+## Index of Injuries by Ripartizione geografica
+
+```{r}
+Rep_geo <- read_excel("data_index.xlsx", sheet = 4)
+colnames(Rep_geo) <- c("Rep_geo", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(Rep_geo)
+```
+## Index of Injuries by company diamension
+
+```{r}
+Dim_azend <- read_excel("data_index.xlsx", sheet = 5)
+colnames(Dim_azend) <- c("Dim_azend", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(Dim_azend)
+```
+
+```{r}
+ggplot(Dim_azend, 
+       aes(x=Index2021, 
+           y=reorder(Dim_azend, Index2021))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 0.5, 
+               xend = Index2021, 
+               y = reorder(Dim_azend, Index2021), 
+               yend = reorder(Dim_azend, Index2021)),
+               color = "lightgrey") +
+  labs (x = "Injuries by company diamension",
+        y = "",
+        title = "ndex of iInjuries by company diamension",
+        subtitle = "Data  from - 2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+```{r}
+ggplot(Dim_azend, 
+       aes(x=Index2017, 
+           y=reorder(Dim_azend, Index2017))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 0.5, 
+               xend = Index2017, 
+               y = reorder(Dim_azend, Index2017), 
+               yend = reorder(Dim_azend, Index2017)),
+               color = "lightgrey") +
+  labs (x = "Injuries by company diamension",
+        y = "",
+        title = "Index of injuries by company diamension",
+        subtitle = "Data  from - 2017") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+## Index of Injuries by regions
+
+```{r}
+region <- read_excel("data_index.xlsx", sheet = 6)
+colnames(region) <- c("region", "Index2017", "Index2018",
+                          "Index2019", "Index2020", "Index2021")
+head(region)
+```
+```{r}
+ggplot(region, 
+       aes(x=Index2017, 
+           y=reorder(region, Index2017))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 40, 
+               xend = Index2017, 
+               y = reorder(region, Index2017), 
+               yend = reorder(region, Index2017)),
+               color = "lightgrey") +
+  labs (x = "Injuries by Region",
+        y = "",
+        title = "Index of injuries by Region",
+        subtitle = "Data  from - 2017") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+```{r}
+ggplot(region, 
+       aes(x=Index2021, 
+           y=reorder(region, Index2021))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 40, 
+               xend = Index2021, 
+               y = reorder(region, Index2021), 
+               yend = reorder(region, Index2021)),
+               color = "lightgrey") +
+  labs (x = "Injuries by Region",
+        y = "",
+        title = "Index of injuries by Region",
+        subtitle = "Data  from - 2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+```{r}
+
+```
+
+
+## The porportion between male and female injuries
+
+The number of injuries occurring to male is about double the number of injuries for females, and this result is reasonable because most of the dangerous job are performed by male. 
 
 ```{r}
 Gender <- Ita_Regions %>%
@@ -296,7 +441,7 @@ ggplot(Gender,
   scale_y_continuous(labels = percent) +
   labs(x = "Genere", 
        y = "Percent", 
-       title  = "Participants by Genere")
+       title  = "Injuries by Gender")
 ```
 
 ```{r}
@@ -304,12 +449,12 @@ ggplot(Ita_Regions,
        aes(x = Eta, 
            fill = Genere)) +
   geom_density(alpha = 0.4) +
-  labs(title = "Age distribution by Gender") +
+  labs(title = "Injuries and Age distribution by Gender") +
   theme_minimal()
 ```
 
 
-From the figure above, we can see that accidents among female workers is at the hihgest rate around the ages 30, 40 and 50, while the age with most frequent accidents among male workers is around the ages 40, 50 and 60. However, at ages from 20 -30 the frequency of accidents for the female workers is higher than male, while at the ages lower than 20 the accidents rate is higher among male workers with respect to female workers. For ages greater than 40 till 60 the accidents is higher for male compared to female.
+From the figure above, we can see that injuries among female workers is at the highest rate around the ages 30, 40 and 50, while the age with most frequent injuries among male workers is around the ages 40, 50 and 60. However, at ages from 20 -30 the frequency of injuries for the female workers is higher than male, while at the ages lower than 20 the injuries rate is higher among male workers with respect to female workers. For ages greater than 40 till 60 the injuries is higher for male compared to female.
 
 ## Modality of occurrence
 
@@ -338,10 +483,10 @@ ggplot(Mod_acc,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Accidents by Modality of occurrence")
+  labs(title = "Injuries by Modality of occurrence")
 ```
 
-## Accidents with and without means of transport
+## Injuries with and without means of transport
 
 ```{r}
 # create a pie chart with slice labels
@@ -368,13 +513,14 @@ ggplot(Mod,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Accidents with and without means of transport")
+  labs(title = "Injuries with and without means of transport")
 ```
 
-## Accidents according to the characteristics of the employee
+## injuries according to the characteristics of the employee
 
 ### Management
-From the graph below we can see that, the first bin `I` which represents employees in the industry and services sectors and they have the highest proportion of accidents 81% with respect to employees in the two other sectors, while employees in the agricultural sector `A` have the lowest rate of accidents, which is about 5% only. For the the employees who are working on behalf of the state `S` they have 14% of the accidents across Italy.
+
+From the graph below we can see that, the first bin `I` which represents injuries in the industry and services sectors and they have the highest proportion of injuries 81% with respect to injuries in the two other sectors, while injuries in the agricultural sector `A` shows the lowest rate which is about 5% only. For the the injuries in the sectors working on behalf of the state `S` they represent 14% of the injuries across Italy.
 
 
 ```{r}
@@ -402,12 +548,13 @@ ggplot(gestione,
               direction = -1) +
   theme_void() +
   theme(legend.position = "FALSE") +
-  labs(title = "Accidents by Management")
+  labs(title = "Injuries by Management")
 ```
 
 
-### Accidents by tariff management
-Looking at the figure below, The highest rate of accidents are coming from Non-Defined tariff management. However, 25% of the accidents are registered by tertiary sector, industrial sector contributes by 22% of the total accidents, handcraft activities have a rate of 12% and the least contributing sector is other activities with only 9% of the total accidents.
+### Injuries by tariff management
+
+Looking at the figure below, The highest rate of injuries are coming from Non-Defined tariff management. However, 25% of the injuries are registered by tertiary sector, industrial sector contributes by 22% to the total injuries, handcraft activities have a rate of 12% and the least contributing sector is other activities with only 9% to the total injuries
 
 
 
@@ -431,10 +578,10 @@ ggplot(G_Tariffaria,
   scale_y_continuous(labels = percent) +
   labs(x = "tariff management", 
        y = "Percent", 
-       title  = "Accidents by tariff management")
+       title  = "Injuries by tariff management")
 ```
 
-### Accidents by large tariff group: code of the large tariff group
+### Injuries by large tariff group: code of the large tariff group
 
 ```{r}
 Grande_Tariffaria <- Ita_Regions %>%
@@ -455,11 +602,11 @@ ggplot(Grande_Tariffaria,
   scale_y_continuous(labels = percent) +
   labs(x = "large tariff group", 
        y = "Percent", 
-       title  = "Accidents by large tariff group")
+       title  = "Injuries by large tariff group")
 ```
-From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of accidents which is 36% fro each while wood and similar zero percent of accidents, furthermore the rate of accidents for metals and machinery, rock and glass mining and textiles and packaging only 1% for each sector.
+From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of injuries which is 36% fro each, while wood and similar shows almost a zero percent of injuries, furthermore the rate of injuries for metals and machinery, rock and glass mining and textiles and packaging are approximately 1% for each sector.
 
-## The number of accidents by economical sector ativity
+## The number of injuries by economical sector ativity
 
 ```{r}
 # create a treemap with tile labels
@@ -473,16 +620,16 @@ ggplot(plotdata,
   geom_treemap() + 
   geom_treemap_text(colour = "white", 
                     place = "centre") +
-  labs(title = "Accidents by economical sector ativity") +
+  labs(title = "Injuries by economical sector ativity") +
   theme(legend.position = "none")
 ```
 ```{r, results='hide'}
 sort(prop.table(table(Ita_Regions$SettoreAttivitaEconomica)), decreasing = TRUE) #prop.table(table(Ita_Regions$SettoreAttivitaEconomica))
 ```
 
-From the figure above we can see that 34.78 of the accidents are not identified as to which economical sector is belong. However, the sector with high proportion of accidents (0.0536) is Q86 `Assitenza Sanitaria` while the sector with the lowest proportion of accidents(0.000004%) is B07 `Estrazione di Minerali Metallifri`. Furthermore, `Commercio al dettalio (escluso quello di autoveicoli e di motocicli)` G47 has 0.04 contribution to the total number of accidents, while F43 `Lavori di costruzione specializzati` has 0.039 from the proportion of accidents. 
+From the figure above we can see that 34.78 of the injuries are not identified as to which economical sector is belong. However, the sector with highest proportion of injuries (0.0536) is Q86 `Assitenza Sanitaria` while the sector with the lowest proportion of injuries (0.000004) is B07 `Estrazione di Minerali Metallifri`. Furthermore, `Commercio al dettalio (escluso quello di autoveicoli e di motocicli)` G47 has 0.04 contribution to the total number of injuries, while F43 `Lavori di costruzione specializzati` has 0.039 from the total proportion of injuries 
 
-## The number of accidents by province
+## The number of injuries by province
 
 ```{r}
 # create a treemap with tile labels
@@ -496,14 +643,14 @@ ggplot(plotprov,
   geom_treemap() + 
   geom_treemap_text(colour = "white", 
                     place = "centre") +
-  labs(title = "Accidents by province") +
+  labs(title = "Injuries by province") +
   theme(legend.position = "none")
 ```
 ```{r, results='hide'}
 sort(prop.table(table(Ita_Regions$LuogoAccadimento)), decreasing = TRUE)
 ```
 
-The graph illustrate the number proportions of accidents by province, we can see that 0.065 of accidents are coming from 15 `province of Milan` which is the highest proportion of accidents compared to other provinces, the second highest proportion of accidents are occurred in 58 `Rom`e with proportion of accidents equals to 0.054, the third province with high proportion of accidents is 1 `Turin`, while the province with the lowest proportion of accidents is 94 `Isernia` which is about 0.00086, the second lowest proportion of accidents is occurred in 101 `Crotone` with proportion of accidents equals to 0.00115 and the third lowest frequent of accidents is coming from 102 `Vibo Valentia` whis is about 0.00124. However, the three province with the lowest frequency of accidents are located in south Italy while the province with high frequency of accidents are in the south and center of Italy.
+The graph illustrate the proportions of injuries by province, we can see that 0.065 of accidents are occurring from 15 `province of Milan` which is the highest proportion of accidents compared to the other provinces, the second highest proportion of accidents are occurred in 58 `Rome` with a proportion of injuries equals to 0.054, the third province with high proportion of injuries is 1 `Turin`, while the province with the lowest proportion of injuries is 94 `Isernia` which is about 0.00086, the second lowest proportion of injuries is occurred in 101 `Crotone` with proportion of injuries equals to 0.00115 and the third lowest frequent of injuries is occurring in 102 `Vibo Valentia` with about 0.00124. However, the three province with the lowest frequency of injuries are located in south Italy while the province with high frequency of injuries are in the south and center of Italy.
 
 # Analyses of impairment, indemnity, indemnified days
 ## Analyse of Indemnity
@@ -527,13 +674,13 @@ ggplot(idemnity,
   scale_y_continuous(labels = percent) +
   labs(x = "Indemnity", 
        y = "Percent", 
-       title  = "Participants by Indemnity")
+       title  = "Injuries with respect to Indemnity")
 ```
 ```{r}
 sort(prop.table(table(Ita_Regions$Indennizzo)), decreasing = TRUE)
 ```
 
-The figure above illustrates the types of indemnity resulting from the accidents, which are `temporary`, `capital`, `direct annuity`and `survivors' annuity`. From the graph we can see that 52% of accidents indemnity are considered to be `TE` temporary, while 4% of the indemnity is considered as capital `CA` and 1% are going directly to annuity `RD` and about 0.1% are survivors' annuity `rs`. 
+The figure above illustrates the types of indemnity resulting from the injuries, which are `temporary`, `capital`, `direct annuity`and `survivors' annuity`. From the graph we can see that 52% of injuries indemnity are considered to be `TE` temporary, while 4% of the indemnity is considered as capital `CA` and 1% are going directly to annuity `RD` and about 0.1% are survivors' annuity `rs`. 
 
 ## Admministrative decision of the fatal outcome
 
@@ -556,18 +703,65 @@ ggplot(fetal,
   scale_y_continuous(labels = percent) +
   labs(x = "Indemnity", 
        y = "Percent", 
-       title  = "Participants by Indemnity")
+       title  = "Admministrative decision of the fatal outcome")
 ```
 
 
 ```{r}
 sort(prop.table(table(Ita_Regions$DefinizioneAmministrativaEsitoMortale)), decreasing = TRUE)
 ```
-The figure above shows the decisions about the accidents, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the accidents are not defined. However, the accidents with a fatal decision are the positive cases which is 0.125% of the total accidents, while the accidents that are not fatal which is the negative cases are 0.092% of the accidents and the accidents that its outcome are not decided yet `in invstigation` are 0.003% of the total accidents.
+The figure above shows the decisions about the injuries, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the injuries are not defined. However, the injuries with a fatal decision are the positive cases which is 0.125% of the total injuries, while the injuries that are not fatal which is the negative cases are 0.092% of the injuries and the injuries that its outcome are not decided yet `in invstigation` are 0.003% of the total injuries
 
 
 
-## Location of the accidents
+## Location of the injuries
+
+
+```{r}
+url <- "http://code.highcharts.com/mapdata/countries/it/it-all.geo.json"
+tmpfile <- tempfile(fileext = ".json")
+download.file(url, tmpfile)
+
+ita <- readLines(tmpfile)
+
+ita <- gsub(".* = ", "", ita)
+ita <- jsonlite::fromJSON(ita, simplifyVector = FALSE)
+
+x <- ita$features[[1]]
+#x$properties
+```
+
+```{r}
+dfita2 <-  ita$features %>% 
+  map_df(function(x){
+    data_frame(hasc = x$properties$hasc, name = x$properties$name)
+  }) %>%  # extract the keys
+  mutate(random = runif(nrow(.))) # create random value
+
+#head(dfita2)
+
+df <- read.csv('map.csv')
+df <- df[,-4:-7]
+#head(df)
+
+data("Ita_Regions")
+ito <- Ita_Regions %>%
+  count(LuogoAccadimento)
+
+df1 <- df %>% inner_join(ito, by = "LuogoAccadimento")
+#head(df1)
+```
+
+```{r}
+highchart(type = "map") %>% 
+  hc_title(text = "The number of injuries by province") %>% 
+  hc_add_series_map(map = ita, df = df1, joinBy = "hasc", value = "n")
+```
+
+
+The map as well confirmed that, the provinces with the highest number of injuries are Mialn Rome and Turin.
+
+
 
 
 
@@ -616,18 +810,19 @@ ggplot(grad_60,
   scale_y_continuous(labels = percent) +
   labs(x = "Indennizzo", 
        y = "Percent", 
-       title  = "Participants by Indennizzo")
+       title  = "Injuries with respect to  by Indemnity")
 ```
 
-The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 60 as TPA, then from the table above we can see that 94% of the workers with degree of impairment greater than 60 are entitled to immediate annuity `RD`, which offers an immediate income to the annuitant, and 6% are entitled to survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. 
+The analysis of the degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 60 as TPA, then from the table above we can see that 94% of the workers with degree of impairment greater than 60 are categorized as immediate annuity `RD`, which offers an immediate income to the annuitant, and 6% are categorized as survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. 
 
 To check if there is a relation between the days of compensation and indemnity a Biserial correlation test is applied.
 
 ```{r}
-biserial.cor(GradoMenomazione_60$GiorniIndennizzati, GradoMenomazione_60$Indennizzo)
+cor <- round(biserial.cor(GradoMenomazione_60$GiorniIndennizzati, 
+             GradoMenomazione_60$Indennizzo), 4)
 ```
 
-From the test we can see that there is almost no correlation between the days compensated and indemnity.
+From the test we can see that there is almost no correlation (`r cor`) between the days compensated and indemnity.
 
 ```{r}
 ggplot(GradoMenomazione_60, 
@@ -687,17 +882,18 @@ ggplot(grad_40,
   scale_y_continuous(labels = percent) +
   labs(x = "Indennizzo", 
        y = "Percent", 
-       title  = "Participants by Indennizzo")
+       title  = "Injuries with respect to  by Indemnity")
 ```
 
-The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 40 as TPA, then from the table above we can see that 98% of the workers with degree of impairment greater than 40 are entitled to immediate annuity `RD`, which offers an immediate income to the annuitant, and 2% are entitled to survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. However, when the insurance company decrease the threshold of the degree of impairment to 40, the number of persons defined as TPD is 2349, while when the threshold of the degree of impairment is 60, the number of persons defined as TPD is 856. 
+The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 40 as TPA, then from the table above we can see that 98% of the workers with degree of impairment greater than 40 are categorized as immediate annuity `RD`, which offers an immediate income to the annuitant, and 2% are categorized as survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. However, when the insurance company decrease the threshold of the degree of impairment to 40, the number of persons defined as TPD is 2349, while when the threshold of the degree of impairment is 60, the number of persons defined as TPD is 856. 
 
 
 ```{r}
-biserial.cor(GradoMenomazione_40$GiorniIndennizzati, GradoMenomazione_40$Indennizzo)
+corr <- round(biserial.cor(GradoMenomazione_40$GiorniIndennizzati,
+                     GradoMenomazione_40$Indennizzo), 4)
 ```
 
-From the test we can see that there is almost no correlation between the days compensated and indemnity.
+From the test we can see that there is almost no correlation (`r corr`) between the days compensated and indemnity.
 ```{r}
 ggplot(GradoMenomazione_40, 
        aes(x = factor(Indennizzo,
