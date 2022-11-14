@@ -717,50 +717,6 @@ The figure above shows the decisions about the injuries, which are `positive`, `
 ## Location of the injuries
 
 
-```{r}
-url <- "http://code.highcharts.com/mapdata/countries/it/it-all.geo.json"
-tmpfile <- tempfile(fileext = ".json")
-download.file(url, tmpfile)
-
-ita <- readLines(tmpfile)
-
-ita <- gsub(".* = ", "", ita)
-ita <- jsonlite::fromJSON(ita, simplifyVector = FALSE)
-
-x <- ita$features[[1]]
-#x$properties
-```
-
-```{r}
-dfita2 <-  ita$features %>% 
-  map_df(function(x){
-    data_frame(hasc = x$properties$hasc, name = x$properties$name)
-  }) %>%  # extract the keys
-  mutate(random = runif(nrow(.))) # create random value
-
-#head(dfita2)
-
-df <- read.csv('map.csv')
-df <- df[,-4:-7]
-#head(df)
-
-data("Ita_Regions")
-ito <- Ita_Regions %>%
-  count(LuogoAccadimento)
-
-df1 <- df %>% inner_join(ito, by = "LuogoAccadimento")
-#head(df1)
-```
-
-```{r}
-highchart(type = "map") %>% 
-  hc_title(text = "The number of injuries by province") %>% 
-  hc_add_series_map(map = ita, df = df1, joinBy = "hasc", value = "n")
-```
-
-
-The map as well confirmed that, the provinces with the highest number of injuries are Mialn Rome and Turin.
-
 
 
 
@@ -780,8 +736,6 @@ GradoMenomazione_60 <- Ita_Regions[, c("GradoMenomazione","Indennizzo", "GiorniI
 GradoMenomazione_60 <-  GradoMenomazione_60 %>%
                        filter(GradoMenomazione > 60)
 ```
-
-
 
 
 
