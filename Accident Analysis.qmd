@@ -760,7 +760,7 @@ The figure above shows the decisions about the injuries, which are `positive`, `
 
 ## Location of the injuries
 
-
+![Diamonds dataset flexdashboard](Rplot.png){#fig-penguins}
 
 
 
