@@ -136,58 +136,46 @@ sapply(Ita_Regions, function(x) length(unique(x)))
 ```
 
 
-
-*Extract the number of accidents everyday*
-
-```{r}
-dataACC <- Ita_Regions %>%  
-  count(DataAccadimento) %>%
-  #summarise(n = sum(n)) %>%
-  #mutate(dat = as.Date(DataAccadimento, format = "%m/%d/%Y"))  
-  group_by(DataAccadimento)
-#dataACC
-```
-
-*Exreact the day, month and year*
+# Index of Injuries 
 
 ```{r}
-data2 <- dataACC
-data2$Date_Time <- strptime(data2$DataAccadimento, format = "%d/%m/%Y")
-data2$Day <- format(data2$Date_Time, "%d")
-data2$Month <- format(data2$Date_Time, "%m")
-data2$NameMonth <- format(data2$Date_Time, "%b")
-data2$Year <- format(data2$Date_Time, "%Y")
-
+data_ita <- Ita_Regions
+data_ita$Date_Time <- strptime(data_ita$DataAccadimento, format = "%d/%m/%Y")
+data_ita$Year <- format(data_ita$Date_Time, "%Y")
+data_ita$Month <- format(data_ita$Date_Time, "%m")
+data_ita$NameMonth <- format(data_ita$Date_Time, "%b")
 ```
 
-# Data Visualization and Analysis
+## Index by year
 
-
-## The number of Injuries by year
-*aggregate number of accidents by year*
 ```{r}
-mydata_total <- data2 %>% 
-  group_by(Year) %>%
-  summarise(total = sum(n)) %>%
-  as.data.frame()
-write.csv(mydata_total, "index.csv", row.names = FALSE)
+year_d <- data_ita %>%
+  group_by(Year) %>% 
+  count(Year)
 ```
+
+```{r}
+year_d$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
+year_d$accident_Indx <- round((year_d$n/year_d$Num_Wks)*100, 4)
+```
+
 
 ```{r}
 reactable(
-  mydata_total,
+  year_d,
   columns = list(
     Year = colDef(name = "Years"),
-    total= colDef(name = "Total of accidents")
+    n= colDef(name = "Total of Injuries"),
+    Num_Wks = colDef(name = "Number of workers"),
+    accident_Indx = colDef(name = "Injuries Index (100%)")
   )
 )
 ```
 
-
 ```{r}
-ggplot(mydata_total, 
+ggplot(year_d, 
        aes(x = Year, 
-           y = total)) +
+           y = n)) +
   geom_line(size = 1.5, 
             color = "lightgrey") +
   geom_point(size = 3, 
@@ -200,265 +188,125 @@ ggplot(mydata_total,
        caption = "Source:          https://dati.inail.it/opendata/default/Infortuni/index.html")
 
 ```
-From the graph we can tell that, 2017 has the highest rate of injuries while 2021 has the lowest rate of injuries However, the frequency of injuries has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of injuries has declined from 2020 to 2021 by -1.47%. In general, the frequency of injuries is showing a declining trend over thepast 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
 
-## The number of injuries by months
+From the graph we can tell that, 2017 has the highest rate of injuries while 2021 has the lowest rate of injuries However, the frequency of injuries has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of injuries has declined from 2020 to 2021 by -1.47%. In general, the frequency of injuries is showing a declining trend over the past 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
 
-*Aggregate number of accidents by month spread across the years*
 ```{r}
-mydata <- data2 %>% 
+ggplot(year_d, 
+       aes(x = factor(Year,
+                      labels = c("2017",
+                                 "2018",
+                                 "2019",
+                                 "2020", "2021")), 
+                      y = accident_Indx)) +
+  geom_bar(stat = "identity", 
+           fill = "cornflowerblue") +
+  geom_text(aes(label = accident_Indx), 
+            vjust = -0.25) +
+  labs(title = "Index of injuries by year", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries")
+```
+
+The graph illustrates the index of injury `(Number of accidents/Number of workers)` in yearly bases, the number of workers is obtained from [Bancadati](https://bancadaticsa.inail.it/bancadaticsa/bancastatistica.asp?cod=0), from the graph we can see that the index of injuries have a downward trend over the years, with 3.89% at the year 2017 and 3.27%. The year 2021 shows the percentage of the injuries has declined by 0.62% from the year 2020. 
+
+
+## Number of Injuries by Month
+
+```{r}
+month_d <- data_ita %>% 
   group_by(Year, Month, NameMonth) %>%
+  count(Year)
+```
+
+
+```{r}
+month_da <- month_d %>% 
+  group_by(Year, Month, NameMonth) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+
+reactable(
+  month_da, searchable = TRUE,  groupBy = "NameMonth"
+)
+#mydata
+```
+
+
+```{r}
+ggplot(month_d, aes(fill=Year, y=n, x=NameMonth)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title = "Index of injuries by months", 
+       subtitle = "Data 2017-2021",
+       x = "Months",
+       y = "Index of injuries")
+```
+From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
+
+## Index of Injuries by economic sector
+
+```{r}
+settore_eco <- data_ita %>%
+  group_by(Year) %>% 
+  count(SettoreAttivitaEconomica)
+
+  #count(IdentificativoInfortunato)
+```
+
+```{r}
+data_settore_eco <- settore_eco %>% 
+  group_by(Year,SettoreAttivitaEconomica) %>%
   summarise(total = sum(n)) %>%
   spread(key = "Year", value = total) %>%
   as.data.frame()
 #mydata
 ```
-```{r}
-colnames(mydata) <- c("Month", "NameMonth", "Year2017", "Year2018", "Year2019",
-                      "Year2020", "Year2021")
-write.csv(mydata, "df.csv")
-df <- read.csv("df.csv")
-```
 
-```{r}
-reactable(
-  df[,-1]
-)
-```
-
-
-```{r}
-colors = c("Year 2017" ="red","Year 2018"= "blue",
-           "Year 2019" ="green","Year 2020"= "orange","Year 2021" = "black")
-ggplot(df, aes(x = Month)) + 
-  geom_line(aes(y = Year2017, color = "Year 2017"), size = 0.5) +
-  geom_line(aes(y = Year2018, color = "Year 2018"), size = 0.5) +
-  geom_line(aes(y = Year2019, color = "Year 2019"), size = 0.5) +
-  geom_line(aes(y = Year2020, color = "Year 2020"), size = 0.5) +
-  geom_line(aes(y = Year2021, color = "Year 2021"), size = 0.5) +
-  labs(x = "Months",
-         y = "number of injuries",
-         color = "Legend") +
-  scale_color_manual(values = colors) +
-  xlim(1,12) +
-  theme_minimal()
-  
-```
-From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
-
-
-# Index of injuries
-
-## Index of Injuries by year
-
-```{r}
-Index <- read.csv("index.csv")
-Index$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
-Index$accident_Indx <- round((Index$total/Index$Num_Wks)*100, 4)
-#Index
-```
-
-```{r}
-reactable(
-  Index,
-  columns = list(
-    Year = colDef(name = "Years"),
-    total= colDef(name = "Total of accidents"),
-    Num_Wks = colDef(name = "Number of workers"),
-    accident_Indx = colDef(name = "Accident Index")
-  )
-)
-```
-
-```{r}
-colors = c("Index" ="blue")
-ggplot(Index, aes(x = Year)) + 
-  geom_line(aes(y = accident_Indx, color = "Index"), size = 0.5) +
-  labs(x = "Years",
-         y = "Percentage of injuries ",
-         color = "Legend") +
-  scale_color_manual(values = colors) +
-  theme_minimal()
-  
-```
-
-The graph illustrates the index of injury `(Number of accidents/Number of workers)` in yearly bases, the number of workers is obtained from [Bancadati](https://bancadaticsa.inail.it/bancadaticsa/bancastatistica.asp?cod=0), from the graph we can see that the index of injuries have a downward trend over the years, with 3.89% at the year 2017 and 3.27%. The year 2021 shows the percentage of the injuries has declined by 0.62% from the year 2020. 
-
-## Index of Injuries by economic sector
-
-
-```{r}
-eco_set_index <- read_excel("data_index.xlsx", sheet = 1)
-summary(eco_set_index)
-```
-```{r}
-ggplot(eco_set_index, 
-       aes(x=Index, 
-           y=reorder(Settore_di_attività_economica, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 1500, 
-               xend = Index, 
-               y = reorder(Settore_di_attività_economica, Index), 
-               yend = reorder(Settore_di_attività_economica, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by economic sector",
-        y = "",
-        title = "Index of iInjuries by economic sector",
-        subtitle = "Data  from - 2017-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-The graph illustrates the index of injuries according to the economical sector, it is obviouse that the sector with high index of injuries is `T Activities of households and families as employers for domestic staff; production of undifferentiated goods and services for own use by households and families` with index of 254.23, the second highest index is registered by `C 12 Tobacco industry` which is about 112.56, the third economic sector with high index is `U Extraterritorial organizations and bodies`, while the sectors with less index of injuries are `G Wholesale and retail trade; repair of motor vehicles and motorcycles` with index of 0.23
 
 
 ## Index of Injuries by Tariff Inail
 
 ```{r}
-Tari_inail <- read_excel("data_index.xlsx", sheet = 2)
-summary(Tari_inail)
-  
-```
+tarif_inail <- data_ita %>%
+  group_by(Year) %>% 
+  count(GrandeGruppoTariffario)
 
+  #count(IdentificativoInfortunato)
+```
 
 ```{r}
-ggplot(Tari_inail, 
-       aes(x=Index, 
-           y=reorder(Tariffa_INAIL, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 0.05, 
-               xend = Index, 
-               y = reorder(Tariffa_INAIL, Index), 
-               yend = reorder(Tariffa_INAIL, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by Tariff management",
-        y = "",
-        title = "Index of iInjuries by Tariff management",
-        subtitle = "Data  from - 2021-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+data_tarif_inail <- tarif_inail %>% 
+  group_by(Year, GrandeGruppoTariffario) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+#mydata
 ```
+
+
+
+
 ## Index of Injuries by management tariff
 
 ```{r}
-gestione <- read_excel("data_index.xlsx", sheet = 3)
-summary(gestione)
+gestione_tarif <- data_ita %>%
+  group_by(Year) %>% 
+  count(GestioneTariffaria)
+
+  #count(IdentificativoInfortunato)
 ```
 
 ```{r}
-ggplot(gestione, 
-       aes(x=Index, 
-           y=reorder(Gestione_tariffaria, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 5, 
-               xend = Index, 
-               y = reorder(Gestione_tariffaria, Index), 
-               yend = reorder(Gestione_tariffaria, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by Tariff management",
-        y = "",
-        title = "Index of iInjuries by Tariff management",
-        subtitle = "Data  from - 2021-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-## Index of Injuries by geographical distribution
-
-```{r}
-Rep_geo <- read_excel("data_index.xlsx", sheet = 4)
-summary(Rep_geo)
+data_gestione_tarif <- gestione_tarif %>% 
+  group_by(Year, GestioneTariffaria) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+#mydata
 ```
 
-
-```{r}
-ggplot(Rep_geo, 
-       aes(x=Index, 
-           y=reorder(Ripartizione_geografica, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 5, 
-               xend = Index, 
-               y = reorder(Ripartizione_geografica, Index), 
-               yend = reorder(Ripartizione_geografica, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by Geographical distribution",
-        y = "",
-        title = "Index of iInjuries by Geographical distribution",
-        subtitle = "Data  from - 2021-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-
-## Index of Injuries by company diamension
-
-```{r}
-Dim_azend <- read_excel("data_index.xlsx", sheet = 5)
-summary(Dim_azend)
-```
-
-```{r}
-library(kableExtra)
-ggplot(Dim_azend, 
-       aes(x=Index, 
-           y=reorder(Dimensione_aziendale, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 5, 
-               xend = Index, 
-               y = reorder(Dimensione_aziendale, Index), 
-               yend = reorder(Dimensione_aziendale, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by company diamension",
-        y = "",
-        title = "Index of iInjuries by company diamension",
-        subtitle = "Data  from - 2021-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-
-
-
-
-
-
-
-
-
-
-
-## Index of Injuries by regions
-
-```{r}
-region <- read_excel("data_index.xlsx", sheet = 6)
-head(region)
-```
-
-```{r}
-ggplot(region, 
-       aes(x=Index, 
-           y=reorder(Regione, Index))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 80, 
-               xend = Index, 
-               y = reorder(Regione, Index), 
-               yend = reorder(Regione, Index)),
-               color = "lightgrey") +
-  labs (x = "Injuries by Region",
-        y = "",
-        title = "Index of injuries by Region",
-        subtitle = "Data  from - 2017-2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
 
 
 
