@@ -109,6 +109,7 @@ library(highcharter)
 library(purrr)
 library(geojsonio)
 library(httr)
+library(readxl)
 ```
 
 *Load the data*
@@ -287,135 +288,178 @@ The graph illustrates the index of injury `(Number of accidents/Number of worker
 
 
 ```{r}
-library(readxl)
 eco_set_index <- read_excel("data_index.xlsx", sheet = 1)
-colnames(eco_set_index) <- c("economic_sector", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
-head(eco_set_index)
+summary(eco_set_index)
 ```
+```{r}
+ggplot(eco_set_index, 
+       aes(x=Index, 
+           y=reorder(Settore_di_attività_economica, Index))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 1500, 
+               xend = Index, 
+               y = reorder(Settore_di_attività_economica, Index), 
+               yend = reorder(Settore_di_attività_economica, Index)),
+               color = "lightgrey") +
+  labs (x = "Injuries by economic sector",
+        y = "",
+        title = "Index of iInjuries by economic sector",
+        subtitle = "Data  from - 2017-2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+The graph illustrates the index of injuries according to the economical sector, it is obviouse that the sector with high index of injuries is `T Activities of households and families as employers for domestic staff; production of undifferentiated goods and services for own use by households and families` with index of 254.23, the second highest index is registered by `C 12 Tobacco industry` which is about 112.56, the third economic sector with high index is `U Extraterritorial organizations and bodies`, while the sectors with less index of injuries are `G Wholesale and retail trade; repair of motor vehicles and motorcycles` with index of 0.23
+
+
 ## Index of Injuries by Tariff Inail
 
 ```{r}
 Tari_inail <- read_excel("data_index.xlsx", sheet = 2)
-colnames(Tari_inail) <- c("Tariff_Inail", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
-head(Tari_inail)
+summary(Tari_inail)
   
+```
+
+
+```{r}
+ggplot(Tari_inail, 
+       aes(x=Index, 
+           y=reorder(Tariffa_INAIL, Index))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 0.05, 
+               xend = Index, 
+               y = reorder(Tariffa_INAIL, Index), 
+               yend = reorder(Tariffa_INAIL, Index)),
+               color = "lightgrey") +
+  labs (x = "Injuries by Tariff management",
+        y = "",
+        title = "Index of iInjuries by Tariff management",
+        subtitle = "Data  from - 2021-2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 ```
 ## Index of Injuries by management tariff
 
 ```{r}
 gestione <- read_excel("data_index.xlsx", sheet = 3)
-colnames(gestione) <- c("gestione_tarif", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
-head(gestione)
+summary(gestione)
 ```
-## Index of Injuries by Ripartizione geografica
+
+```{r}
+ggplot(gestione, 
+       aes(x=Index, 
+           y=reorder(Gestione_tariffaria, Index))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 5, 
+               xend = Index, 
+               y = reorder(Gestione_tariffaria, Index), 
+               yend = reorder(Gestione_tariffaria, Index)),
+               color = "lightgrey") +
+  labs (x = "Injuries by Tariff management",
+        y = "",
+        title = "Index of iInjuries by Tariff management",
+        subtitle = "Data  from - 2021-2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+## Index of Injuries by geographical distribution
 
 ```{r}
 Rep_geo <- read_excel("data_index.xlsx", sheet = 4)
-colnames(Rep_geo) <- c("Rep_geo", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
-head(Rep_geo)
+summary(Rep_geo)
 ```
+
+
+```{r}
+ggplot(Rep_geo, 
+       aes(x=Index, 
+           y=reorder(Ripartizione_geografica, Index))) +
+  geom_point(color="blue", 
+             size = 2) +
+  geom_segment(aes(x = 5, 
+               xend = Index, 
+               y = reorder(Ripartizione_geografica, Index), 
+               yend = reorder(Ripartizione_geografica, Index)),
+               color = "lightgrey") +
+  labs (x = "Injuries by Geographical distribution",
+        y = "",
+        title = "Index of iInjuries by Geographical distribution",
+        subtitle = "Data  from - 2021-2021") +
+  theme_minimal() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
 ## Index of Injuries by company diamension
 
 ```{r}
 Dim_azend <- read_excel("data_index.xlsx", sheet = 5)
-colnames(Dim_azend) <- c("Dim_azend", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
-head(Dim_azend)
+summary(Dim_azend)
 ```
 
 ```{r}
+library(kableExtra)
 ggplot(Dim_azend, 
-       aes(x=Index2021, 
-           y=reorder(Dim_azend, Index2021))) +
+       aes(x=Index, 
+           y=reorder(Dimensione_aziendale, Index))) +
   geom_point(color="blue", 
              size = 2) +
-  geom_segment(aes(x = 0.5, 
-               xend = Index2021, 
-               y = reorder(Dim_azend, Index2021), 
-               yend = reorder(Dim_azend, Index2021)),
+  geom_segment(aes(x = 5, 
+               xend = Index, 
+               y = reorder(Dimensione_aziendale, Index), 
+               yend = reorder(Dimensione_aziendale, Index)),
                color = "lightgrey") +
   labs (x = "Injuries by company diamension",
         y = "",
-        title = "ndex of iInjuries by company diamension",
-        subtitle = "Data  from - 2021") +
+        title = "Index of iInjuries by company diamension",
+        subtitle = "Data  from - 2021-2021") +
   theme_minimal() + 
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 ```
 
-```{r}
-ggplot(Dim_azend, 
-       aes(x=Index2017, 
-           y=reorder(Dim_azend, Index2017))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 0.5, 
-               xend = Index2017, 
-               y = reorder(Dim_azend, Index2017), 
-               yend = reorder(Dim_azend, Index2017)),
-               color = "lightgrey") +
-  labs (x = "Injuries by company diamension",
-        y = "",
-        title = "Index of injuries by company diamension",
-        subtitle = "Data  from - 2017") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
+
+
+
+
+
+
+
+
+
+
 ## Index of Injuries by regions
 
 ```{r}
 region <- read_excel("data_index.xlsx", sheet = 6)
-colnames(region) <- c("region", "Index2017", "Index2018",
-                          "Index2019", "Index2020", "Index2021")
 head(region)
 ```
+
 ```{r}
 ggplot(region, 
-       aes(x=Index2017, 
-           y=reorder(region, Index2017))) +
+       aes(x=Index, 
+           y=reorder(Regione, Index))) +
   geom_point(color="blue", 
              size = 2) +
-  geom_segment(aes(x = 40, 
-               xend = Index2017, 
-               y = reorder(region, Index2017), 
-               yend = reorder(region, Index2017)),
+  geom_segment(aes(x = 80, 
+               xend = Index, 
+               y = reorder(Regione, Index), 
+               yend = reorder(Regione, Index)),
                color = "lightgrey") +
   labs (x = "Injuries by Region",
         y = "",
         title = "Index of injuries by Region",
-        subtitle = "Data  from - 2017") +
+        subtitle = "Data  from - 2017-2021") +
   theme_minimal() + 
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 ```
 
-```{r}
-ggplot(region, 
-       aes(x=Index2021, 
-           y=reorder(region, Index2021))) +
-  geom_point(color="blue", 
-             size = 2) +
-  geom_segment(aes(x = 40, 
-               xend = Index2021, 
-               y = reorder(region, Index2021), 
-               yend = reorder(region, Index2021)),
-               color = "lightgrey") +
-  labs (x = "Injuries by Region",
-        y = "",
-        title = "Index of injuries by Region",
-        subtitle = "Data  from - 2021") +
-  theme_minimal() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
-```{r}
-
-```
 
 
 ## The porportion between male and female injuries
