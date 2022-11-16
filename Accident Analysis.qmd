@@ -6,7 +6,7 @@ format:
     code-fold: true
     toc: true
     number-sections: true
-    code-copy: true
+    #code-copy: true
 ---
 
 # Introduction
@@ -172,22 +172,19 @@ reactable(
 )
 ```
 
-```{r}
-ggplot(year_d, 
-       aes(x = Year, 
-           y = n)) +
-  geom_line(size = 1.5, 
-            color = "lightgrey") +
-  geom_point(size = 3, 
-             color = "steelblue") +
-  theme_minimal() +
-  labs(y = "Number of Accidents (years)", 
-       x = "Year",
-       title = "Number of injuries over time",
-       subtitle = "Italy (2017-2021)",
-       caption = "Source:          https://dati.inail.it/opendata/default/Infortuni/index.html")
 
+```{r}
+p <- ggplot(year_d, aes(Year, accident_Indx, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Index of injuries by Years", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries") + geom_point(aes(size = accident_Indx))
+
+ggplotly(p)
 ```
+
 
 From the graph we can tell that, 2017 has the highest rate of injuries while 2021 has the lowest rate of injuries However, the frequency of injuries has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of injuries has declined from 2020 to 2021 by -1.47%. In general, the frequency of injuries is showing a declining trend over the past 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
 
@@ -235,78 +232,161 @@ reactable(
 ```
 
 
+
+From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
+
 ```{r}
-ggplot(month_d, aes(fill=Year, y=n, x=NameMonth)) + 
-    geom_bar(position="dodge", stat="identity") +
-  labs(title = "Index of injuries by months", 
+p <- ggplot(month_d, aes(Month, n, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Index of injuries by months", 
        subtitle = "Data 2017-2021",
        x = "Months",
        y = "Index of injuries")
+
+ggplotly(p)
 ```
-From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
+
+The figure illustrates the index of injuries during different years (2017 - 2021) for all moths, analysing the years 2017 - 2019 we can see that the number of injuries follows more or less the same pattern during the months, the pattern shows three peeks; around March, May and October, and the lowest number of injuries is registered in August, we observe as well that months with lower number of injuries are January, April and December. However, for the years 2020 - 2021 `the years of pandemic` we observe different behavior of number of injuries with respect to years 2017 - 2019. For the year 2020, during this year the May has the lowest number of injuries while November has the highest number of injuries compared to all years. The year 2021, we see that the number of injuries follow the pattren of the years 2017 - 2019 but with considrably lower rate of injuries.
 
 ## Index of Injuries by economic sector
 
 ```{r}
-settore_eco <- data_ita %>%
-  group_by(Year) %>% 
-  count(SettoreAttivitaEconomica)
+Economic_sector <- read_excel("Indexes.xlsx", sheet = 3)
+head(Economic_sector)
+```
+```{r}
+data_t <- Economic_sector %>% 
+  filter(Year == "2017") 
 
-  #count(IdentificativoInfortunato)
+ggplot(data_t, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2017") 
+```
+The graph above analysis the index of injuries in the activity of different economic sectors in the year 2017, the code for the different economic sectors can be find [here](https://codiceateco.it/sezioni). Observing the figure above, the economic secttor with the highest index of injuries is E (`FORNITURA DI ACQUA; RETI FOGNARIE, ATTIVITÀ DI GESTIONE DEI RIFIUTI E RISANAMENTO`) with an index of `r max(data_t$Index)`, and the economic sector with the lowest index of injuries is J `	SERVIZI DI INFORMAZIONE E COMUNICAZIONE` with an index of `r min(data_t$Index)`. However, activities like I, J, N, C24, R and Q are characterized with high index of injuries while activities like K, D, C25, C14 and C11 are characterized with lower rate of injuries.   
+
+
+
+```{r}
+data_t <- Economic_sector %>% 
+  filter(Year == "2018")
+
+ggplot(data_t, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2018") 
+```
+For the years 2018 the graph illustrate that the economic sector with the highest index of injuries is E (`FORNITURA DI ACQUA; RETI FOGNARIE, ATTIVITÀ DI GESTIONE DEI RIFIUTI E RISANAMENTO`) with an index of `r max(data_t$Index)` and this correspond to the previous year, and the sector with the lowest frequent of injuries is I `ATTIVITÀ FINANZIARIE E ASSICURATIVE` with and index of `r min(data_t$Index)`.
+
+```{r}
+data_t <- Economic_sector %>% 
+  filter(Year == "2019")
+
+ggplot(data_t, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2019") 
 ```
 
 ```{r}
-data_settore_eco <- settore_eco %>% 
-  group_by(Year,SettoreAttivitaEconomica) %>%
-  summarise(total = sum(n)) %>%
-  spread(key = "Year", value = total) %>%
-  as.data.frame()
-#mydata
+data_t <- Economic_sector %>% 
+  filter(Year == "2020")
+
+ggplot(data_t, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2020") 
 ```
 
 
+```{r}
+data_t <- Economic_sector %>% 
+  filter(Year == "2021")
+
+ggplot(data_t, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2021") 
+```
 
 ## Index of Injuries by Tariff Inail
 
 ```{r}
-tarif_inail <- data_ita %>%
-  group_by(Year) %>% 
-  count(GrandeGruppoTariffario)
-
-  #count(IdentificativoInfortunato)
+tarif_inail <- read_excel("Indexes.xlsx", sheet = 2)
+head(tarif_inail)
 ```
 
 ```{r}
-data_tarif_inail <- tarif_inail %>% 
-  group_by(Year, GrandeGruppoTariffario) %>%
-  summarise(total = sum(n)) %>%
-  spread(key = "Year", value = total) %>%
-  as.data.frame()
-#mydata
+ggplot(tarif_inail, aes(fill=Tariffa_INAIL, y = Index, x=Year)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title = "Index of injuries by Inail tariff", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries")
 ```
 
+```{r}
+p <- ggplot(tarif_inail, aes(Year, Index, group=Tariffa_INAIL, colour=Tariffa_INAIL)) + 
+     geom_line(size=1)
+p <- p + geom_point()
+
+ggplotly(p)
+```
 
 
 
 ## Index of Injuries by management tariff
-
 ```{r}
-gestione_tarif <- data_ita %>%
-  group_by(Year) %>% 
-  count(GestioneTariffaria)
-
-  #count(IdentificativoInfortunato)
+gestione <- read_excel("Indexes.xlsx", sheet = 1)
+head(gestione)
 ```
 
-```{r}
-data_gestione_tarif <- gestione_tarif %>% 
-  group_by(Year, GestioneTariffaria) %>%
-  summarise(total = sum(n)) %>%
-  spread(key = "Year", value = total) %>%
-  as.data.frame()
-#mydata
-```
 
+
+```{r}
+ggplot(gestione, aes(fill=Gestione_tariffaria, y = Index, x=Year)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title = "Index of injuries by management tariff", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries")
+```
 
 
 
@@ -608,9 +688,9 @@ The figure above shows the decisions about the injuries, which are `positive`, `
 
 ## Location of the injuries
 
-![Diamonds dataset flexdashboard](Rplot.png){#fig-penguins}
+![Number of Injuries across Italy](Rplot.png){#fig-penguins}
 
-
+The map illustrates the number of injuries distributed across all Italian provinces, and as we see before the provinces with high number of injuries are; Milan, Roma and Turin, while the provinces with less number of injuries are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of injuries are located in northren and center Italy and the lowest number of injuries are located in southern Italy. 
 
 
 # Total and permanent disability
