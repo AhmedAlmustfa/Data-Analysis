@@ -83,7 +83,7 @@ In this Report a set of main statistical findings and analysis in relation to in
 
 An accident at work is defined as a discrete occurrence during the course of work which leads to physical or mental harm. Fatal accidents at work are those that lead to the death of the victim within one year of the accident taking place. Non-fatal accidents at work are defined as those that result at least four full calendar days of absence from work (they are sometimes also called ‘serious accidents at work’). Non-fatal accidents at work may result in a considerable number of working days being lost and often involve considerable harm for the workers concerned and their families. They have the potential to force people, for example, to live with a permanent disability, to leave the labour market, or to change job.
 
-The report is organized in the following, first section is the discussion of the number of accidents, section two is containing incidence rates, section three analysis by economic activity, section four analysis by type of injury, last section is devouted to the definition of total and permanent disability according to the degree of impairment.   
+The report is organized in the following, first section is the discussion of the number of accidents, section two is containing incidence rates, section three analysis of incedents rates, section four analyses of impairment, indemnity, indemnified days, last section is devouted to the definition of total and permanent disability according to the degree of impairment.   
 
 *Required Libraries*
 
@@ -360,7 +360,7 @@ From the figure we can tell that, 2017 has the highest rate of incidents while 2
 
 
 
-# Analysis by activity
+
 
 ## Index of accidents by economic sector
 
