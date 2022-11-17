@@ -1,0 +1,174 @@
+---
+title: "Untitled"
+format:
+  html:
+    theme: default
+    toc: true
+    number-sections: true
+---
+
+```{r}
+
+```
+
+```{r}
+data_ita <- Ita_Regions
+data_ita$Date_Time <- strptime(data_ita$DataAccadimento, format = "%d/%m/%Y")
+data_ita$Year <- format(data_ita$Date_Time, "%Y")
+data_ita$Month <- format(data_ita$Date_Time, "%m")
+data_ita$NameMonth <- format(data_ita$Date_Time, "%b")
+```
+
+# creat data by sector
+
+
+```{r}
+settore_eco <- data_ita %>%
+  group_by(Year) %>% 
+  count(SettoreAttivitaEconomica)
+
+  #count(IdentificativoInfortunato)
+```
+
+```{r}
+data_settore_eco <- settore_eco %>% 
+  group_by(Year,SettoreAttivitaEconomica) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+#mydata
+```
+
+```{r}
+data_sect <- read_excel("Data_work.xlsx", sheet = 3)
+#head(data_sect)
+```
+
+```{r}
+data_inj <- read.csv("data_sectOR.csv")
+#head(data_inj)
+```
+
+
+```{r}
+inj_wrk_data <- data_sect %>%
+  inner_join(data_inj, by = "Settore_economica")
+#head(inj_wrk_data)
+```
+```{r}
+inj_wrk_data$Index2017 <- round((inj_wrk_data$Inj2017/inj_wrk_data$w2017), 4)
+inj_wrk_data$Index2018 <- round((inj_wrk_data$Inj2018/inj_wrk_data$w2018), 4)
+inj_wrk_data$Index2019 <- round((inj_wrk_data$Inj2019/inj_wrk_data$w2019), 4)
+inj_wrk_data$Index2020 <- round((inj_wrk_data$Inj2020/inj_wrk_data$w2020), 4)
+inj_wrk_data$Index2021 <- round((inj_wrk_data$Inj2021/inj_wrk_data$w2021), 4)
+```
+
+```{r}
+write.csv(inj_wrk_data, "index_sector.csv", row.names = FALSE)
+```
+
+
+```{r}
+head(inj_wrk_data)
+```
+
+# creat data by inail traiff
+
+```{r}
+tarif_inail <- data_ita %>%
+  group_by(Year) %>% 
+  count(GrandeGruppoTariffario)
+
+  #count(IdentificativoInfortunato)
+```
+
+```{r}
+data_tarif_inail <- tarif_inail %>% 
+  group_by(Year, GrandeGruppoTariffario) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+head(data_tarif_inail)
+```
+
+```{r}
+inail_inj <- read.csv("df_inail.csv")
+head(inail_inj)
+```
+
+```{r}
+inail_inj_wok <- data_inail %>%
+  inner_join(inail_inj, by = "Tariffa_INAIL")
+```
+
+
+```{r}
+data_inail <- read_excel("Data_work.xlsx", sheet = 1)
+data_inail
+```
+
+```{r}
+inail_inj_wok$Index2017 <- round((inail_inj_wok$Inj2017/inail_inj_wok$w2017), 4)
+inail_inj_wok$Index2018 <- round((inail_inj_wok$Inj2018/inail_inj_wok$w2018), 4)
+inail_inj_wok$Index2019 <- round((inail_inj_wok$Inj2019/inail_inj_wok$w2019), 4)
+inail_inj_wok$Index2020 <- round((inail_inj_wok$Inj2020/inail_inj_wok$w2020), 4)
+inail_inj_wok$Index2021 <- round((inail_inj_wok$Inj2021/inail_inj_wok$w2021), 4)
+```
+
+```{r}
+write.csv(inail_inj_wok, "Index_inail.csv", row.names = FALSE)
+```
+
+```{r}
+gestione <- read_excel("Indexes.xlsx", sheet = 1)
+#head(gestione)
+```
+
+# create data gestione
+```{r}
+gestione_tarif <- data_ita %>%
+  group_by(Year) %>% 
+  count(GestioneTariffaria)
+
+  #count(IdentificativoInfortunato)
+```
+
+```{r}
+data_gestione_tarif <- gestione_tarif %>% 
+  group_by(Year, GestioneTariffaria) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
+#mydata
+```
+
+```{r}
+write.csv(data_gestione_tarif, "df_gestione.csv", row.names = FALSE)
+```
+
+```{r}
+df_get <- read.csv("df_gestione.csv")
+#head(df_get)
+```
+```{r}
+data_inj <- read_excel("Data_work.xlsx", sheet = 2)
+#head(data_inj)
+```
+
+
+```{r}
+data_gestione <- df_get %>%
+  inner_join(data_inj, by = "Gestione_tariffaria")
+```
+
+```{r}
+data_gestione$Index2017 <- round((data_gestione$Inj2017/data_gestione$w2017), 4)
+data_gestione$Index2018 <- round((data_gestione$Inj2018/data_gestione$w2018), 4)
+data_gestione$Index2019 <- round((data_gestione$Inj2019/data_gestione$w2019), 4)
+data_gestione$Index2020 <- round((data_gestione$Inj2020/data_gestione$w2020), 4)
+data_gestione$Index2021 <- round((data_gestione$Inj2021/data_gestione$w2021), 4)
+```
+
+```{r}
+write.csv(data_gestione, "Index_gestione.csv", row.names = FALSE)
+```

@@ -11,7 +11,7 @@ format:
 
 # Introduction
 
-In this Report we are going to analyse the dataset Injuries among workers, which represents Six-monthly injuries data across all Italy grouped by "region", and it is downloadable from [INAIL](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, we collect the data by region from INAIL website and merge the data into one dataset, the second step we create a package in R for the dataset (`accidentr` ). The dataset contains 25 variables and 3052056 observations, and the variables are grouped into 7 types as the following:
+In this Report a set of main statistical findings and analysis in relation to indicators concerning accidents at work accross Italy, the statistics presented in this report have been conducted using the software R, the data which represents Six-monthly incidents across all Italy grouped by "region", and the data concerning the number of employers is collected from [INAIL website](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, the data is collected by region from INAIL website and then it is merged into one dataset, the second step a package is created in R to contain the dataset (`accidentr` ). The dataset contains 25 variables and 3052056 observations, and the variables are grouped into 7 types as the following:
 
 :::[.incremental]
 
@@ -74,12 +74,16 @@ In this Report we are going to analyse the dataset Injuries among workers, which
 23. management: if `agriculture`, `industry and services`, `on behalf of the state`;
 24. tariff management: if `industry`, `crafts`, `tertiary`, `other activities`;
 25. large tariff group: code of the large tariff group (whether `agricultural processing and food`,`chemical, paper and leather`, `construction and plant`, `energy and communications`, `wood and similar`, `metals and machinery`;` rock and glass mining `,` textiles and packaging `,
-`transport and warehouses `,` various activities `).
+`transport and warehouses `,` other activities `).
 
 
 :::
 
 :::
+
+An accident at work is defined as a discrete occurrence during the course of work which leads to physical or mental harm. Fatal accidents at work are those that lead to the death of the victim within one year of the accident taking place. Non-fatal accidents at work are defined as those that result at least four full calendar days of absence from work (they are sometimes also called ‘serious accidents at work’). Non-fatal accidents at work may result in a considerable number of working days being lost and often involve considerable harm for the workers concerned and their families. They have the potential to force people, for example, to live with a permanent disability, to leave the labour market, or to change job.
+
+The report is organized in the following, first section is the discussion of the number of accidents, section two is containing incidence rates, section three analysis by economic activity, section four analysis by type of injury, last section is devouted to the definition of total and permanent disability according to the degree of impairment.   
 
 *Required Libraries*
 
@@ -119,7 +123,7 @@ data(Ita_Regions)
 
 *overview of the data*
 ```{r}
-str(Ita_Regions)
+#str(Ita_Regions)
 ```
 
 
@@ -136,7 +140,9 @@ sapply(Ita_Regions, function(x) length(unique(x)))
 ```
 
 
-# Index of Injuries 
+# Number of accidents 
+
+## Number of incidents by years
 
 ```{r}
 data_ita <- Ita_Regions
@@ -146,253 +152,38 @@ data_ita$Month <- format(data_ita$Date_Time, "%m")
 data_ita$NameMonth <- format(data_ita$Date_Time, "%b")
 ```
 
-## Index by year
+
 
 ```{r}
-year_d <- data_ita %>%
-  group_by(Year) %>% 
+Number_acc <- data_ita %>%
+  group_by(Year, Genere) %>%
   count(Year)
 ```
 
 ```{r}
-year_d$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
-year_d$accident_Indx <- round((year_d$n/year_d$Num_Wks)*100, 4)
+Number_gen <- Number_acc %>% 
+  group_by(Year, Genere) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Genere", value = total) %>%
+  mutate(Total = sum(M+F)) %>%
+  as.data.frame()
+#mydata
 ```
-
-
 ```{r}
 reactable(
-  year_d,
+  Number_gen,
   columns = list(
     Year = colDef(name = "Years"),
-    n= colDef(name = "Total of Injuries"),
-    Num_Wks = colDef(name = "Number of workers"),
-    accident_Indx = colDef(name = "Injuries Index (100%)")
+    F = colDef(name = "Female Incidects"),
+    M = colDef(name = "Male Incidents"),
+    Total = colDef(name = "Total of Incident")
   )
 )
 ```
 
+In 2017, there were 643.1 thousand accidents at work across all Italy, which is the highest number of accidents with respect to the other years while 2021 has the lowest number of accidents. Overall, there were a decrease of -12.87 in the total number of accidents at work between 2017 and 2021. However, men were considerably more likely than women to have an accident at work. In 2021 more than two out of every three (63.5 %) of accidents at work in Italy involved men. In 2017 difference was (63.9 %). Factors that influence these statistics are: the proportion of men and women who are in employment; the different types of work that men and women carry out; the activities in which they work. For example, there are far more accidents in the mining, manufacturing or construction sectors, which tend to be male-dominated. 
 
-```{r}
-p <- ggplot(year_d, aes(Year, accident_Indx, group=Year, colour=Year)) + 
-     geom_line(size=1)
-p <- p + geom_point()  +
-       labs(title = "Index of injuries by Years", 
-       subtitle = "Data 2017-2021",
-       x = "Years",
-       y = "Index of injuries") + geom_point(aes(size = accident_Indx))
-
-ggplotly(p)
-```
-
-
-From the graph we can tell that, 2017 has the highest rate of injuries while 2021 has the lowest rate of injuries However, the frequency of injuries has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of injuries has declined from 2020 to 2021 by -1.47%. In general, the frequency of injuries is showing a declining trend over the past 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
-
-```{r}
-ggplot(year_d, 
-       aes(x = factor(Year,
-                      labels = c("2017",
-                                 "2018",
-                                 "2019",
-                                 "2020", "2021")), 
-                      y = accident_Indx)) +
-  geom_bar(stat = "identity", 
-           fill = "cornflowerblue") +
-  geom_text(aes(label = accident_Indx), 
-            vjust = -0.25) +
-  labs(title = "Index of injuries by year", 
-       subtitle = "Data 2017-2021",
-       x = "Years",
-       y = "Index of injuries")
-```
-
-The graph illustrates the index of injury `(Number of accidents/Number of workers)` in yearly bases, the number of workers is obtained from [Bancadati](https://bancadaticsa.inail.it/bancadaticsa/bancastatistica.asp?cod=0), from the graph we can see that the index of injuries have a downward trend over the years, with 3.89% at the year 2017 and 3.27%. The year 2021 shows the percentage of the injuries has declined by 0.62% from the year 2020. 
-
-
-## Number of Injuries by Month
-
-```{r}
-month_d <- data_ita %>% 
-  group_by(Year, Month, NameMonth) %>%
-  count(Year)
-```
-
-
-```{r}
-month_da <- month_d %>% 
-  group_by(Year, Month, NameMonth) %>%
-  summarise(total = sum(n)) %>%
-  spread(key = "Year", value = total) %>%
-  as.data.frame()
-
-reactable(
-  month_da, searchable = TRUE,  groupBy = "NameMonth"
-)
-#mydata
-```
-
-
-
-From the graph we can see that, the number of injuries around summer is always lower with respect to other seasons. However, after summer there is a dramatic increase in the number of injuries across Italy. Furthermore, we noticed as well there are three peeks in the year except for the year 2020, the peeks are around March, May and October. Considering the years of the pandemic; in March of 2020 the number of injuries declined sharply and hit the lowest value, in May of the same year the number of injuries hits the peek around November and this is the highest number of injuries recorded with respect to the other years. 
-
-```{r}
-p <- ggplot(month_d, aes(Month, n, group=Year, colour=Year)) + 
-     geom_line(size=1)
-p <- p + geom_point()  +
-       labs(title = "Index of injuries by months", 
-       subtitle = "Data 2017-2021",
-       x = "Months",
-       y = "Index of injuries")
-
-ggplotly(p)
-```
-
-The figure illustrates the index of injuries during different years (2017 - 2021) for all moths, analysing the years 2017 - 2019 we can see that the number of injuries follows more or less the same pattern during the months, the pattern shows three peeks; around March, May and October, and the lowest number of injuries is registered in August, we observe as well that months with lower number of injuries are January, April and December. However, for the years 2020 - 2021 `the years of pandemic` we observe different behavior of number of injuries with respect to years 2017 - 2019. For the year 2020, during this year the May has the lowest number of injuries while November has the highest number of injuries compared to all years. The year 2021, we see that the number of injuries follow the pattren of the years 2017 - 2019 but with considrably lower rate of injuries.
-
-## Index of Injuries by economic sector
-
-```{r}
-Economic_sector <- read_excel("Indexes.xlsx", sheet = 3)
-head(Economic_sector)
-```
-```{r}
-data_t <- Economic_sector %>% 
-  filter(Year == "2017") 
-
-ggplot(data_t, 
-       aes(x = Settore_economica, 
-           y = Index)) +
-  geom_bar(stat = "identity", fill = "indianred3", 
-           color = "black") +
-  theme(axis.text.x = element_text(angle = 45, 
-                                   hjust = 1))  +
-  labs (x = "Dconomic sectors",
-        y = "Index of injuries",
-        title = "Index of of injuries in different economic sectors",
-        subtitle = "Data - 2017") 
-```
-The graph above analysis the index of injuries in the activity of different economic sectors in the year 2017, the code for the different economic sectors can be find [here](https://codiceateco.it/sezioni). Observing the figure above, the economic secttor with the highest index of injuries is E (`FORNITURA DI ACQUA; RETI FOGNARIE, ATTIVITÀ DI GESTIONE DEI RIFIUTI E RISANAMENTO`) with an index of `r max(data_t$Index)`, and the economic sector with the lowest index of injuries is J `	SERVIZI DI INFORMAZIONE E COMUNICAZIONE` with an index of `r min(data_t$Index)`. However, activities like I, J, N, C24, R and Q are characterized with high index of injuries while activities like K, D, C25, C14 and C11 are characterized with lower rate of injuries.   
-
-
-
-```{r}
-data_t <- Economic_sector %>% 
-  filter(Year == "2018")
-
-ggplot(data_t, 
-       aes(x = Settore_economica, 
-           y = Index)) +
-  geom_bar(stat = "identity", fill = "indianred3", 
-           color = "black") +
-  theme(axis.text.x = element_text(angle = 45, 
-                                   hjust = 1))  +
-  labs (x = "Dconomic sectors",
-        y = "Index of injuries",
-        title = "Index of of injuries in different economic sectors",
-        subtitle = "Data - 2018") 
-```
-For the years 2018 the graph illustrate that the economic sector with the highest index of injuries is E (`FORNITURA DI ACQUA; RETI FOGNARIE, ATTIVITÀ DI GESTIONE DEI RIFIUTI E RISANAMENTO`) with an index of `r max(data_t$Index)` and this correspond to the previous year, and the sector with the lowest frequent of injuries is I `ATTIVITÀ FINANZIARIE E ASSICURATIVE` with and index of `r min(data_t$Index)`.
-
-```{r}
-data_t <- Economic_sector %>% 
-  filter(Year == "2019")
-
-ggplot(data_t, 
-       aes(x = Settore_economica, 
-           y = Index)) +
-  geom_bar(stat = "identity", fill = "indianred3", 
-           color = "black") +
-  theme(axis.text.x = element_text(angle = 45, 
-                                   hjust = 1))  +
-  labs (x = "Dconomic sectors",
-        y = "Index of injuries",
-        title = "Index of of injuries in different economic sectors",
-        subtitle = "Data - 2019") 
-```
-
-```{r}
-data_t <- Economic_sector %>% 
-  filter(Year == "2020")
-
-ggplot(data_t, 
-       aes(x = Settore_economica, 
-           y = Index)) +
-  geom_bar(stat = "identity", fill = "indianred3", 
-           color = "black") +
-  theme(axis.text.x = element_text(angle = 45, 
-                                   hjust = 1))  +
-  labs (x = "Dconomic sectors",
-        y = "Index of injuries",
-        title = "Index of of injuries in different economic sectors",
-        subtitle = "Data - 2020") 
-```
-
-
-```{r}
-data_t <- Economic_sector %>% 
-  filter(Year == "2021")
-
-ggplot(data_t, 
-       aes(x = Settore_economica, 
-           y = Index)) +
-  geom_bar(stat = "identity", fill = "indianred3", 
-           color = "black") +
-  theme(axis.text.x = element_text(angle = 45, 
-                                   hjust = 1))  +
-  labs (x = "Dconomic sectors",
-        y = "Index of injuries",
-        title = "Index of of injuries in different economic sectors",
-        subtitle = "Data - 2021") 
-```
-
-## Index of Injuries by Tariff Inail
-
-```{r}
-tarif_inail <- read_excel("Indexes.xlsx", sheet = 2)
-head(tarif_inail)
-```
-
-```{r}
-ggplot(tarif_inail, aes(fill=Tariffa_INAIL, y = Index, x=Year)) + 
-    geom_bar(position="dodge", stat="identity") +
-  labs(title = "Index of injuries by Inail tariff", 
-       subtitle = "Data 2017-2021",
-       x = "Years",
-       y = "Index of injuries")
-```
-
-```{r}
-p <- ggplot(tarif_inail, aes(Year, Index, group=Tariffa_INAIL, colour=Tariffa_INAIL)) + 
-     geom_line(size=1)
-p <- p + geom_point()
-
-ggplotly(p)
-```
-
-
-
-## Index of Injuries by management tariff
-```{r}
-gestione <- read_excel("Indexes.xlsx", sheet = 1)
-head(gestione)
-```
-
-
-
-```{r}
-ggplot(gestione, aes(fill=Gestione_tariffaria, y = Index, x=Year)) + 
-    geom_bar(position="dodge", stat="identity") +
-  labs(title = "Index of injuries by management tariff", 
-       subtitle = "Data 2017-2021",
-       x = "Years",
-       y = "Index of injuries")
-```
-
-
-
-## The porportion between male and female injuries
-
-The number of injuries occurring to male is about double the number of injuries for females, and this result is reasonable because most of the dangerous job are performed by male. 
+The figure below confirms that the number of incidents among male population is about two out of every three (63 %) with respect to incidents among the female population.
 
 ```{r}
 Gender <- Ita_Regions %>%
@@ -415,6 +206,8 @@ ggplot(Gender,
        y = "Percent", 
        title  = "Injuries by Gender")
 ```
+## Age distribution 
+
 
 ```{r}
 ggplot(Ita_Regions, 
@@ -428,119 +221,57 @@ ggplot(Ita_Regions,
 
 From the figure above, we can see that injuries among female workers is at the highest rate around the ages 30, 40 and 50, while the age with most frequent injuries among male workers is around the ages 40, 50 and 60. However, at ages from 20 -30 the frequency of injuries for the female workers is higher than male, while at the ages lower than 20 the injuries rate is higher among male workers with respect to female workers. For ages greater than 40 till 60 the injuries is higher for male compared to female.
 
-## Modality of occurrence
+## Number of incidents by months
 
 ```{r}
-# create a pie chart with slice labels
-Mod_acc <- Ita_Regions %>%
-  count(ModalitaAccadimento) %>%
-  arrange(desc(ModalitaAccadimento)) %>%
-  mutate(prop = round(n*100/sum(n), 1),
-         lab.ypos = cumsum(prop) - 0.5*prop)
-
-Mod_acc$label <- paste0(Mod_acc$ModalitaAccadimento, "\n",
-                         round(Mod_acc$prop), "%")
-
-ggplot(Mod_acc, 
-       aes(x = "", 
-           y = prop, 
-           fill = ModalitaAccadimento)) +
-  geom_bar(width = 1, 
-           stat = "identity", 
-           color = "black") +
-  geom_text(aes(y = lab.ypos, label = label), 
-            color = "black") +
-  coord_polar("y", 
-              start = 0, 
-              direction = -1) +
-  theme_void() +
-  theme(legend.position = "FALSE") +
-  labs(title = "Injuries by Modality of occurrence")
+month_d <- data_ita %>% 
+  group_by(Year, Month, NameMonth) %>%
+  count(Year)
 ```
 
-## Injuries with and without means of transport
 
 ```{r}
-# create a pie chart with slice labels
-Mod <- Ita_Regions %>%
-  count(ConSenzaMezzoTrasporto) %>%
-  arrange(desc(ConSenzaMezzoTrasporto)) %>%
-  mutate(prop = round(n*100/sum(n), 1),
-         lab.ypos = cumsum(prop) - 0.5*prop)
+month_da <- month_d %>% 
+  group_by(Year, Month, NameMonth) %>%
+  summarise(total = sum(n)) %>%
+  spread(key = "Year", value = total) %>%
+  as.data.frame()
 
-Mod$label <- paste0(Mod$ConSenzaMezzoTrasporto, "\n",
-                         round(Mod$prop), "%")
-
-ggplot(Mod, 
-       aes(x = "", 
-           y = prop, 
-           fill = ConSenzaMezzoTrasporto)) +
-  geom_bar(width = 1, 
-           stat = "identity", 
-           color = "black") +
-  geom_text(aes(y = lab.ypos, label = label), 
-            color = "black") +
-  coord_polar("y", 
-              start = 0, 
-              direction = -1) +
-  theme_void() +
-  theme(legend.position = "FALSE") +
-  labs(title = "Injuries with and without means of transport")
+reactable(
+  month_da, searchable = TRUE
+)
+#mydata
 ```
 
-## injuries according to the characteristics of the employee
 
-### Management
+```{r}
+p <- ggplot(month_d, aes(Month, n, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Index of injuries by months", 
+       subtitle = "Data 2017-2021",
+       x = "Months",
+       y = "Index of injuries")
+
+ggplotly(p)
+```
+
+The figure illustrates the index of injuries during different years (2017 - 2021) for all moths, analysing the years 2017 - 2019 we can see that the number of incidents at work follows more or less the same pattern during the months, the pattern shows three peeks; around March, May and October, and the lowest number of incidents is registered in August, we observe as well that months with lower frequency of incidents are January, April and December. However, for the years 2020 - 2021 `the years of pandemic` we observe different behavior of the frequency of incidents at work with respect to the  years 2017 - 2019. For the year 2020, May has the lowest number of incidents (30368) while November has the highest frequency of incidents (72483) compared to all years. In 2021, we see that the frequency of incidents follow the pattern of the years 2017 - 2019 but with considerably lower frequency of incidents.
+
+## Number of incidents according to management
 
 From the graph below we can see that, the first bin `I` which represents injuries in the industry and services sectors and they have the highest proportion of injuries 81% with respect to injuries in the two other sectors, while injuries in the agricultural sector `A` shows the lowest rate which is about 5% only. For the the injuries in the sectors working on behalf of the state `S` they represent 14% of the injuries across Italy.
 
-
 ```{r}
-# create a pie chart with slice labels
-gestione <- Ita_Regions %>%
+Gest <- Ita_Regions %>%
   count(Gestione) %>%
-  arrange(desc(Gestione)) %>%
-  mutate(prop = round(n*100/sum(n), 1),
-         lab.ypos = cumsum(prop) - 0.5*prop)
-
-gestione$label <- paste0(gestione$Gestione, "\n",
-                         round(gestione$prop), "%")
-
-ggplot(gestione, 
-       aes(x = "", 
-           y = prop, 
-           fill = Gestione)) +
-  geom_bar(width = 1, 
-           stat = "identity", 
-           color = "black") +
-  geom_text(aes(y = lab.ypos, label = label), 
-            color = "black") +
-  coord_polar("y", 
-              start = 0, 
-              direction = -1) +
-  theme_void() +
-  theme(legend.position = "FALSE") +
-  labs(title = "Injuries by Management")
-```
-
-
-### Injuries by tariff management
-
-Looking at the figure below, The highest rate of injuries are coming from Non-Defined tariff management. However, 25% of the injuries are registered by tertiary sector, industrial sector contributes by 22% to the total injuries, handcraft activities have a rate of 12% and the least contributing sector is other activities with only 9% to the total injuries
-
-
-
-
-```{r}
-G_Tariffaria <- Ita_Regions %>%
-  count(GestioneTariffaria) %>%
   mutate(pct = n / sum(n),
          pctlabel = paste0(round(pct*100), "%"))
 
 # plot the bars as percentages, 
 # in decending order with bar labels
-ggplot(G_Tariffaria, 
-       aes(x = reorder(GestioneTariffaria, -pct),
+ggplot(Gest, 
+       aes(x = reorder(Gestione, -pct),
            y = pct)) + 
   geom_bar(stat = "identity", 
            fill = "indianred3", 
@@ -548,60 +279,12 @@ ggplot(G_Tariffaria,
   geom_text(aes(label = pctlabel), 
             vjust = -0.25) +
   scale_y_continuous(labels = percent) +
-  labs(x = "tariff management", 
+  labs(x = "Incidents management", 
        y = "Percent", 
-       title  = "Injuries by tariff management")
+       title  = "Incidents by  management")
 ```
 
-### Injuries by large tariff group: code of the large tariff group
-
-```{r}
-Grande_Tariffaria <- Ita_Regions %>%
-  count(GrandeGruppoTariffario) %>%
-  mutate(pct = n / sum(n),
-         pctlabel = paste0(round(pct*100), "%"))
-
-# plot the bars as percentages, 
-# in decending order with bar labels
-ggplot(Grande_Tariffaria, 
-       aes(x = reorder(GrandeGruppoTariffario, -pct),
-           y = pct)) + 
-  geom_bar(stat = "identity", 
-           fill = "indianred3", 
-           color = "black") +
-  geom_text(aes(label = pctlabel), 
-            vjust = -0.25) +
-  scale_y_continuous(labels = percent) +
-  labs(x = "large tariff group", 
-       y = "Percent", 
-       title  = "Injuries by large tariff group")
-```
-From the above graph, agricultural processing and food and Non-Defined sector they contribute by the same proportion of injuries which is 36% fro each, while wood and similar shows almost a zero percent of injuries, furthermore the rate of injuries for metals and machinery, rock and glass mining and textiles and packaging are approximately 1% for each sector.
-
-## The number of injuries by economical sector ativity
-
-```{r}
-# create a treemap with tile labels
-plotdata <- Ita_Regions %>%
-  count(SettoreAttivitaEconomica)
-
-ggplot(plotdata, 
-       aes(fill = SettoreAttivitaEconomica, 
-           area = n, 
-           label = SettoreAttivitaEconomica)) +
-  geom_treemap() + 
-  geom_treemap_text(colour = "white", 
-                    place = "centre") +
-  labs(title = "Injuries by economical sector ativity") +
-  theme(legend.position = "none")
-```
-```{r, results='hide'}
-sort(prop.table(table(Ita_Regions$SettoreAttivitaEconomica)), decreasing = TRUE) #prop.table(table(Ita_Regions$SettoreAttivitaEconomica))
-```
-
-From the figure above we can see that 34.78 of the injuries are not identified as to which economical sector is belong. However, the sector with highest proportion of injuries (0.0536) is Q86 `Assitenza Sanitaria` while the sector with the lowest proportion of injuries (0.000004) is B07 `Estrazione di Minerali Metallifri`. Furthermore, `Commercio al dettalio (escluso quello di autoveicoli e di motocicli)` G47 has 0.04 contribution to the total number of injuries, while F43 `Lavori di costruzione specializzati` has 0.039 from the total proportion of injuries 
-
-## The number of injuries by province
+## Number of Incidents by province
 
 ```{r}
 # create a treemap with tile labels
@@ -618,13 +301,252 @@ ggplot(plotprov,
   labs(title = "Injuries by province") +
   theme(legend.position = "none")
 ```
-```{r, results='hide'}
-sort(prop.table(table(Ita_Regions$LuogoAccadimento)), decreasing = TRUE)
-```
 
 The graph illustrate the proportions of injuries by province, we can see that 0.065 of accidents are occurring from 15 `province of Milan` which is the highest proportion of accidents compared to the other provinces, the second highest proportion of accidents are occurred in 58 `Rome` with a proportion of injuries equals to 0.054, the third province with high proportion of injuries is 1 `Turin`, while the province with the lowest proportion of injuries is 94 `Isernia` which is about 0.00086, the second lowest proportion of injuries is occurred in 101 `Crotone` with proportion of injuries equals to 0.00115 and the third lowest frequent of injuries is occurring in 102 `Vibo Valentia` with about 0.00124. However, the three province with the lowest frequency of injuries are located in south Italy while the province with high frequency of injuries are in the south and center of Italy.
 
+
+## Location of the incidents (Map)
+
+![Number of Injuries across Italy](Rplot.png){#fig-penguins}
+
+The map illustrates the number of injuries distributed across all Italian provinces, and as we see before the provinces with high number of injuries are; Milan, Roma and Turin, while the provinces with less number of injuries are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of injuries are located in northren and center Italy and the lowest number of injuries are located in southern Italy.
+
+
+# Incidents Rates
+
+## Index by year
+
+```{r}
+year_d <- data_ita %>%
+  group_by(Year) %>%
+  count(Year)
+```
+
+
+```{r}
+year_d$Num_Wks <- c(16518031, 16911409, 17336533, 15960796, 17146622)
+year_d$accident_Indx <- round((year_d$n/year_d$Num_Wks)*100, 4)
+```
+
+
+```{r}
+reactable(
+  year_d,
+  columns = list(
+    Year = colDef(name = "Years"),
+    n= colDef(name = "Total of Incidents"),
+    Num_Wks = colDef(name = "Number of workers"),
+    accident_Indx = colDef(name = "Incidents Index (100)")
+  )
+)
+```
+An alternative way to analyse the information on accidents at work is to express the number of accidents in relation to the number of persons employed; this produces a ratio referred to as the incidence rate. In the Figure below, simple incidence rates are shown relating the number of accidents to the overall number of persons employed. For any given year, these statistics give an indication of the likelihood that someone had an accident.
+In the years 2017 - 2021, the number of accidents per 100 employed persons ranged from less than 3.26 in 2021 to 3.89 accidents per 100 persons employed in 2017. The highest incidence rates among the this years were recorded in 2017 and 2018, with 3.89 and 3.78 accidents per 100 persons employed respectively.
+
+```{r}
+p <- ggplot(year_d, aes(Year, accident_Indx, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Index of injuries by Years", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries") + geom_point(aes(size = accident_Indx))
+
+ggplotly(p)
+```
+
+
+From the figure we can tell that, 2017 has the highest rate of incidents while 2021 has the lowest rate of incidents. However, the frequency of incidents has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of incidents has declined from 2020 to 2021 by -1.47%. In general, the frequency of incidents is showing a declining trend over the past 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
+
+
+
+# Analysis by activity
+
+## Index of accidents by economic sector
+
+### Rates of incidents in 2017
+
+```{r}
+Economic_sector <- read_excel("Indexes.xlsx", sheet = 3)
+#head(Economic_sector)
+```
+
+
+
+```{r}
+data_17 <- Economic_sector %>% 
+  filter(Year == "2017") 
+
+
+ggplot(data_17, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2017") 
+```
+
+Within the economic sectors,`E` water supply; sewerage, waste management and remediation activities, `N` rental,travel agencies, business support services, `H` transportation and storage, `C24` Steel industry and `I` Accommodation and catering service activities sectors together accounted for around  (21.16 %) of all accidents at works in 2017. More than (4.98 %) of all accidents at work in Italy took place within the water supply; sewerage, waste management and remediation activities sector, while the rental,travel agencies, business support services (4.24 %) had the next highest share. Transportation and storage sector (4.06 %), Steel industry with index of (4.03 %), Accommodation and catering service activities (3.85 %). The sectors with low frequent of accidents are; `J` Information and communication services (0.74%), `K` Financial and insurance activities (0.745), `C26` Manufacturing of telecommunications equipment (0.85%) and `D` Supply of electricity, gas, steam and air conditioning (0.97%).
+
+
+### Rates of incidents in 2018
+
+```{r}
+data_18 <- Economic_sector %>% 
+  filter(Year == "2018")
+
+ggplot(data_18, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2018") 
+```
+For the years 2018, the economic sectors,`E` water supply; sewerage, waste management and remediation activities (5.22%), `N` rental,travel agencies, business support services (4.27%), `H` transportation and storage (4.12%), `C24`Steel industry and (4.01%) `Q` Health and social assistance (3.52%). Comparing these result to 2017 the order of the top rated sectors with high incidents index remain the same except  `I` Accommodation and catering service activities is replaced with `Q` Health and social assistance in 2018, furthermore there is a slight increase of (0.24%) in  water supply; sewerage, waste management and remediation activities sector in 2018 with respect to 2017. The sectors with low frequent of accidents are;  `K` Financial and insurance activities (0.74%),`J` Information and communication services (0.79%), `C14` Making of clothing items (except Fur clothing) (0.88%), `C26` Manufacturing of telecommunications equipment (0.94%) and `D` Supply of electricity, gas, steam and air conditioning (0.95%). Here as well we see some changing in orders with respect to 2017.
+
+
+### Rates of incidents in 2019
+
+```{r}
+data_19 <- Economic_sector %>% 
+  filter(Year == "2019")
+
+ggplot(data_19, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2019") 
+```
+For the years 2019, the economic sectors,`E` water supply; sewerage, waste management and remediation activities (5.05%), `N` rental,travel agencies, business support services (4.09%), `H` transportation and storage (4.02%), `C24`Steel industry and (3.88%) `Q` Health and social assistance (3.54%). Comparing these result to 2018 the order of the top rated sectors with high incidents index remain the same, furthermore there is a slight increase of these index compared to 2018. The sectors with low frequent of accidents are;  `K` Financial and insurance activities (0.69%),`J` Information and communication services (0.73%), `C14` Making of clothing items (except Fur clothing) (0.91%), `C26` Manufacturing of telecommunications equipment 0.91% and `D` Supply of electricity, gas, steam and air conditioning (0.97%).
+Here as well we see some changing in orders with respect to 2017.
+
+### Rates of incidents in 2020
+
+```{r}
+data_20 <- Economic_sector %>% 
+  filter(Year == "2020")
+
+ggplot(data_20, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2020") 
+```
+In the year 2020 there is a dramatic increase in the index of incidents for Health and social assistance sector and one of the main factor behind this phenomenon is the pandemic `Covid 19`, `Q` Health and social assistance sector is characterized with highest incident index (10.22%) compared to the past years, and this is reasonable due to the pandemic and how hospitals were operating during this period. However, `A` Agriculture, forestry and fishing as well witnessed an increase (4.19%) with respect to the past years. The flowing economic sectors showed a considerable declined `E` water supply; sewerage, waste management and remediation activities (3.96%), `N` rental,travel agencies, business support services (3.52%), `H` transportation and storage (3.45%), `C24`Steel industry and (3.31%). For the sectors with low incident of accidents we observed a considerable decline with respect to the past years,  `K` Financial and insurance activities (0.45%),`J` Information and communication services (0.56%), `C14` Making of clothing items (except Fur clothing) (0.68%), `C26` Manufacturing of telecommunications equipment (0.65%) and `D` Supply of electricity, gas, steam and air conditioning (0.63%). 
+
+### Rates of incidents in 2021
+
+```{r}
+data_21 <- Economic_sector %>% 
+  filter(Year == "2021")
+
+ggplot(data_21, 
+       aes(x = Settore_economica, 
+           y = Index)) +
+  geom_bar(stat = "identity", fill = "indianred3", 
+           color = "black") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))  +
+  labs (x = "Dconomic sectors",
+        y = "Index of injuries",
+        title = "Index of of injuries in different economic sectors",
+        subtitle = "Data - 2021") 
+```
+
+Analysing the Incidents rates foe the year 2021, there is a dramatic decline (-5.63%) in the index of incidents for Health and social assistance sector compared to 2021, although `Q` Health and social assistance sector is still characterized with highest incident index (4.59%) in 2021. `E` water supply; sewerage, waste management and remediation activities (4.24 %) had the next highest share, then `H` transportation and storage (3.45%), `C24`Steel industry and (4.06%), `N` rental,travel agencies, business support services (3.55%). For the sectors with low incident of accidents we observed a more or less a similar behaviour with respect to the past year 2020, `K` Financial and insurance activities (0.44%),`J` Information and communication services (0.62%), `C14` Making of clothing items (except Fur clothing) (0.70%), `C26` Manufacturing of telecommunications equipment (0.75%) and `D` Supply of electricity, gas, steam and air conditioning (0.68%).  
+
+
+## Index of incidents by large tariff group (Tariff Inail)
+
+```{r}
+tarif_inail <- read_excel("Indexes.xlsx", sheet = 2)
+#head(tarif_inail)
+```
+
+
+```{r}
+ggplot(tarif_inail, aes(fill=Tariffa_INAIL, y = Index, x=Year)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title = "Index of injuries by Inail tariff", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries")
+```
+Figure above presents an analysis of data according to large tariff group across the years 2017 and 2021, the groups that are characterized with high frequency of incidents are `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining.
+
+
+```{r}
+p <- ggplot(tarif_inail, aes(Year, Index, group=Tariffa_INAIL,
+                             colour=Tariffa_INAIL)) + 
+     geom_line(size=1)
+p <- p + geom_point() +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+The figure above shows that years between 2017 - 2018 were characterized generally with highest incident rates. As noted before the groups with relatively high index of incidents are  `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining. In 2020 the highest index of incidents is recorded by agricultural processing and food it was about 58.22%. For the energy and communications, the highest record of incidents is registered in 2021 which is about 52.88%. Considering rock and glass mining, it hits the highest record in 2019 with an index of 31.83%. The rest of the groups have a relatively a low incident index ranging from 2.255 recorded from `GG2` chemical, paper and leather group to 0.32% recorded from  `GG0` other activities.
+
+## Index of incidents by management tariff
+
+```{r}
+gestione <- read_excel("Indexes.xlsx", sheet = 1)
+#head(gestione)
+```
+
+
+
+```{r}
+ggplot(gestione, aes(fill=Gestione_tariffaria, y = Index, x=Year)) + 
+    geom_bar(position="dodge", stat="identity") +
+  labs(title = "Index of injuries by management tariff", 
+       subtitle = "Data 2017-2021",
+       x = "Years",
+       y = "Index of injuries")
+```
+
+Figure above presents an analysis of data according to management tariff across the years 2017 and 2021, the activities that are characterized with high frequency of incidents are industry and tertiary, except in the year 2020 which has the highest incident rate with respect to all years.
+
+
+```{r}
+p <- ggplot(gestione, aes(Year, Index, group=Gestione_tariffaria, 
+                          colour=Gestione_tariffaria)) + 
+     geom_line(size=1)
+p <- p + geom_point() +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+Analysing the figure above, Industry, crafts and tertiary follow the same patterns of the incidents index between the years 2017 - 2021 except for the year 2020 tertiary showed an increase in the number of incidents 2.92% while industry and crafts showed a decline  1.99% and 1.72% respectively. For the other activities, the incident index increased dramatically (4.8%) and this is the highest index recorded between 2017 and 2021.
+
+
 # Analyses of impairment, indemnity, indemnified days
+
 ## Analyse of Indemnity
 
 ```{r}
@@ -683,14 +605,6 @@ ggplot(fetal,
 sort(prop.table(table(Ita_Regions$DefinizioneAmministrativaEsitoMortale)), decreasing = TRUE)
 ```
 The figure above shows the decisions about the injuries, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the injuries are not defined. However, the injuries with a fatal decision are the positive cases which is 0.125% of the total injuries, while the injuries that are not fatal which is the negative cases are 0.092% of the injuries and the injuries that its outcome are not decided yet `in invstigation` are 0.003% of the total injuries
-
-
-
-## Location of the injuries
-
-![Number of Injuries across Italy](Rplot.png){#fig-penguins}
-
-The map illustrates the number of injuries distributed across all Italian provinces, and as we see before the provinces with high number of injuries are; Milan, Roma and Turin, while the provinces with less number of injuries are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of injuries are located in northren and center Italy and the lowest number of injuries are located in southern Italy. 
 
 
 # Total and permanent disability
