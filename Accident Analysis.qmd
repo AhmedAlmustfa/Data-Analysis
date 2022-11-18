@@ -11,7 +11,9 @@ format:
 
 # Introduction
 
-In this Report a set of main statistical findings and analysis in relation to indicators concerning accidents at work accross Italy, the statistics presented in this report have been conducted using the software R, the data which represents Six-monthly incidents across all Italy grouped by "region", and the data concerning the number of employers is collected from [INAIL website](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). The first step, the data is collected by region from INAIL website and then it is merged into one dataset, the second step a package is created in R to contain the dataset (`accidentr` ). The dataset contains 25 variables and 3052056 observations, and the variables are grouped into 7 types as the following:
+This Report presents a set of main statistical findings and analysis in relation to indicators concerning accidents at work across Italy, the statistics presented in this report have been conducted using the software R, the data which represents Six-monthly incidents grouped by "region", and the data concerning the number of employers are collected from [INAIL website](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo). First step, data is collected by region from [INAIL website](https://dati.inail.it/opendata/elements1/DatiConCadenzaSemestraleInfortuniAbruzzo) and then it is merged into one dataset. Second step a package is created in R to contain the dataset (`accidentr` ). 
+
+The dataset about incidents contains 25 variables and 3052056 observations, and the variables are grouped into 7 types as the following:
 
 :::[.incremental]
 
@@ -83,7 +85,7 @@ In this Report a set of main statistical findings and analysis in relation to in
 
 An accident at work is defined as a discrete occurrence during the course of work which leads to physical or mental harm. Fatal accidents at work are those that lead to the death of the victim within one year of the accident taking place. Non-fatal accidents at work are defined as those that result at least four full calendar days of absence from work (they are sometimes also called ‘serious accidents at work’). Non-fatal accidents at work may result in a considerable number of working days being lost and often involve considerable harm for the workers concerned and their families. They have the potential to force people, for example, to live with a permanent disability, to leave the labour market, or to change job.
 
-The report is organized in the following, first section is the discussion of the number of accidents, section two is containing incidence rates, section three analysis of incedents rates, section four analyses of impairment, indemnity, indemnified days, last section is devouted to the definition of total and permanent disability according to the degree of impairment.   
+The rest of the report is organized in the following, section two is the discussion of the number of accidents, section three is containing incidence index, section four analyses of impairment, indemnity, indemnified days, last section is devoured to the definition of total and permanent disability according to the degree of impairment.   
 
 *Required Libraries*
 
@@ -181,7 +183,7 @@ reactable(
 )
 ```
 
-In 2017, there were 643.1 thousand accidents at work across all Italy, which is the highest number of accidents with respect to the other years while 2021 has the lowest number of accidents. Overall, there were a decrease of -12.87 in the total number of accidents at work between 2017 and 2021. However, men were considerably more likely than women to have an accident at work. In 2021 more than two out of every three (63.5 %) of accidents at work in Italy involved men. In 2017 difference was (63.9 %). Factors that influence these statistics are: the proportion of men and women who are in employment; the different types of work that men and women carry out; the activities in which they work. For example, there are far more accidents in the mining, manufacturing or construction sectors, which tend to be male-dominated. 
+In 2017, there were 643.1 thousand accidents at work across all Italy, which is the highest number of accidents with respect to the other years while 2021 has the lowest number of accidents. Overall, there were a decrease of -12.87 in the total number of accidents at work between 2017 and 2021. However, men were considerably more likely than women to have an accident at work. In 2021 more than two out of every three (63.5 %) of accidents at work in Italy involved men. Factors that influence these statistics are: the proportion of men and women who are in employment; the different types of work that men and women carry out; the activities in which they work. For example, there are far more accidents in the mining, manufacturing or construction sectors, which tend to be male-dominated. 
 
 The figure below confirms that the number of incidents among male population is about two out of every three (63 %) with respect to incidents among the female population.
 
@@ -202,9 +204,9 @@ ggplot(Gender,
   geom_text(aes(label = pctlabel), 
             vjust = -0.25) +
   scale_y_continuous(labels = percent) +
-  labs(x = "Genere", 
+  labs(x = "Gendere", 
        y = "Percent", 
-       title  = "Injuries by Gender")
+       title  = "Incidents by Gender")
 ```
 ## Age distribution 
 
@@ -214,7 +216,7 @@ ggplot(Ita_Regions,
        aes(x = Eta, 
            fill = Genere)) +
   geom_density(alpha = 0.4) +
-  labs(title = "Injuries and Age distribution by Gender") +
+  labs(title = "Incidents and Age distribution by Gender") +
   theme_minimal()
 ```
 
@@ -248,19 +250,167 @@ reactable(
 p <- ggplot(month_d, aes(Month, n, group=Year, colour=Year)) + 
      geom_line(size=1)
 p <- p + geom_point()  +
-       labs(title = "Index of injuries by months", 
+       labs(title = "Index of Incidents by months", 
        subtitle = "Data 2017-2021",
        x = "Months",
-       y = "Index of injuries")
+       y = "Index of Incidents")
 
 ggplotly(p)
 ```
 
-The figure illustrates the index of injuries during different years (2017 - 2021) for all moths, analysing the years 2017 - 2019 we can see that the number of incidents at work follows more or less the same pattern during the months, the pattern shows three peeks; around March, May and October, and the lowest number of incidents is registered in August, we observe as well that months with lower frequency of incidents are January, April and December. However, for the years 2020 - 2021 `the years of pandemic` we observe different behavior of the frequency of incidents at work with respect to the  years 2017 - 2019. For the year 2020, May has the lowest number of incidents (30368) while November has the highest frequency of incidents (72483) compared to all years. In 2021, we see that the frequency of incidents follow the pattern of the years 2017 - 2019 but with considerably lower frequency of incidents.
+The figure illustrates the indices of accidents during the different years (2017 - 2021) for all months, analysing the years 2017 - 2019 we can see that the number of incidents at work follows more or less the same pattern during the months. The pattern shows three peeks; around March, May and October. The lowest number of incidents is registered in August, we observe as well that months with lower frequency of incidents are January, April and December. However, for the years 2020 - 2021 `the years of pandemic` we observe different behavior of the frequency of incidents at work with respect to the  years 2017 - 2019. For the year 2020, May has the lowest number of incidents (30368) while November has the highest frequency of incidents (72483) compared to all years. In 2021, we see that the frequency of incidents follow the pattern of the years 2017 - 2019 but with considerably lower frequency of incidents.
+
+## Analysis of fetal incidents
+
+### Number of fetal incidents by economic activity and gender
+
+```{r}
+mal_fem <- data_ita %>%
+  group_by(Year, DefinizioneAmministrativaEsitoMortale, Genere,
+           SettoreAttivitaEconomica) %>%
+  count(DefinizioneAmministrativaEsitoMortale) %>%
+  filter(DefinizioneAmministrativaEsitoMortale == "P" )  %>% 
+  #group_by(Year, DefinizioneAmministrativaEsitoMortale, SettoreAttivitaEconomica) %>%
+  summarise(total = sum(n)) %>%
+  
+  as.data.frame()
+```
+```{r}
+mal_fem <-mal_fem %>%
+  filter(!grepl("ND", SettoreAttivitaEconomica))
+```
+
+
+
+```{r}
+p <- ggplot(mal_fem, aes(SettoreAttivitaEconomica,
+                          total, group=Genere, colour=Genere)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Number of incidents by economic sector", 
+       subtitle = "Data 2017-2021",
+       x = "Economic sector",
+       y = "Number of Incidents") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+The figure above shows information about the proportion of men and women who are in employment and the different types of work that male and female carry out. 
+
+### Number of fetal incidents by economic activity
+
+```{r}
+Fetal_econ_sect <- data_ita %>%
+  group_by(Year, DefinizioneAmministrativaEsitoMortale, SettoreAttivitaEconomica) %>%
+  count(DefinizioneAmministrativaEsitoMortale) %>%
+  filter(DefinizioneAmministrativaEsitoMortale == "P" )  %>% 
+  #group_by(Year, DefinizioneAmministrativaEsitoMortale, SettoreAttivitaEconomica) %>%
+  summarise(total = sum(n)) %>%
+  
+  as.data.frame()
+```
+
+```{r}
+Fetal_econ_sect <-Fetal_econ_sect %>%
+  filter(!grepl("ND", SettoreAttivitaEconomica))
+```
+
+
+```{r}
+p <- ggplot(Fetal_econ_sect, aes(SettoreAttivitaEconomica,
+                          total, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Number of incidents by economic sector", 
+       subtitle = "Data 2017-2021",
+       x = "Economic sector",
+       y = "Number of Incidents") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+The figure above presents the number of fatal accidents according to the economic activity between the year 2017 and 2021. Within the economic sector,`F43` Demolition and preparation of the building site, `H49` Line transport and pipeline transport, `F41` Construction of buildings, `I56` Restaurant service activities and `C25` Manufacture of metal products (except machinery and equipment) sectors are considered to be the sectors with greatly high frequency of accidents for the past years. In 2020, `Q86` Health care witnessed a boom in the frequency of accidents and this number is influenced by the pandemic period `Covid 19`.
+
+### Number of Non-Fetal incidents by economic activity
+
+```{r}
+Non_Fetal_econ_sect <- data_ita %>%
+  group_by(Year, DefinizioneAmministrativaEsitoMortale, SettoreAttivitaEconomica) %>%
+  count(DefinizioneAmministrativaEsitoMortale) %>%
+  filter(DefinizioneAmministrativaEsitoMortale == "N" )  %>% 
+  #group_by(Year, DefinizioneAmministrativaEsitoMortale, SettoreAttivitaEconomica) %>%
+  summarise(total = sum(n)) %>%
+  
+  as.data.frame()
+```
+
+```{r}
+Non_Fetal_econ_sect <-Non_Fetal_econ_sect %>%
+  filter(!grepl("ND", SettoreAttivitaEconomica))
+```
+
+
+```{r}
+p <- ggplot(Non_Fetal_econ_sect, aes(SettoreAttivitaEconomica,
+                          total, group=Year, colour=Year)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Number of incidents by economic sector", 
+       subtitle = "Data 2017-2021",
+       x = "Economic sector",
+       y = "Number of Incidents") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+The figure above illustrates the number of Non-fatal accidents according to the economic activity between the year 2017 and 2021. Within the economic sector, `H49` Line transport and pipeline transport,`F43` Demolition and preparation of the building site, `F41` Construction of buildings, `I56` Restaurant service activities and `C25` Manufacture of metal products (except machinery and equipment) sectors are considered to be the sectors with greatly high frequency of accidents for the past years. In 2020, `Q86` Health care and  witnessed aN INCREASE in the frequency of accidents and this number is influenced by the pandemic period `Covid 19`.
+
+
+### Number of fetal incidents by gender
+
+```{r}
+decision <- data_ita %>%
+  group_by(Year, DefinizioneAmministrativaEsitoMortale, Genere) %>%
+  count(DefinizioneAmministrativaEsitoMortale)
+```
+
+
+```{r}
+Fetal_incidents <- decision %>%
+  filter(DefinizioneAmministrativaEsitoMortale == "P"  )  %>% 
+  group_by(Year, DefinizioneAmministrativaEsitoMortale, Genere) %>%
+  summarise(total = sum(n)) %>%
+  as.data.frame()
+```
+
+
+```{r}
+p <- ggplot(Fetal_incidents, aes(Year,
+                          total, group=Genere, colour=Genere)) + 
+     geom_line(size=1)
+p <- p + geom_point()  +
+       labs(title = "Index of injuries by months", 
+       subtitle = "Data 2017-2021",
+       x = "Months",
+       y = "Index of injuries") +
+  theme(axis.text.x = element_text(angle = 45, 
+                                   hjust = 1))
+
+ggplotly(p)
+```
+
+The graph illustrates the number of fetal incidents among male and female population. Men were considerably more likely than women to have incidents at work. As noted above, one of the main reason why the number of incidents is higher for men population (than women population) is related to the economic activities where they are more likely to work. Indeed, the number of accidents at work varies greatly depending upon the economic activity and is positively skwed in relation to male-dominated activities. In 2020 the number of fetal incidents in Italy were higher compared to other years, one of the factor that influenced this number is the pandemic `Covid 19`.
+
 
 ## Number of incidents according to management
 
-From the graph below we can see that, the first bin `I` which represents injuries in the industry and services sectors and they have the highest proportion of injuries 81% with respect to injuries in the two other sectors, while injuries in the agricultural sector `A` shows the lowest rate which is about 5% only. For the the injuries in the sectors working on behalf of the state `S` they represent 14% of the injuries across Italy.
+From the graph below we can see that, the first bin `I` which represents incidents in the industry and services sector which has the highest proportion of accidents 81% with respect to accidents in the other sectors, while incidents in the agricultural sector `A` shows the lowest frequency which is about 5% only. For the the incidents in working on behalf of the state `S` sector represent 14% of the accidents across Italy.
 
 ```{r}
 Gest <- Ita_Regions %>%
@@ -302,14 +452,14 @@ ggplot(plotprov,
   theme(legend.position = "none")
 ```
 
-The graph illustrate the proportions of injuries by province, we can see that 0.065 of accidents are occurring from 15 `province of Milan` which is the highest proportion of accidents compared to the other provinces, the second highest proportion of accidents are occurred in 58 `Rome` with a proportion of injuries equals to 0.054, the third province with high proportion of injuries is 1 `Turin`, while the province with the lowest proportion of injuries is 94 `Isernia` which is about 0.00086, the second lowest proportion of injuries is occurred in 101 `Crotone` with proportion of injuries equals to 0.00115 and the third lowest frequent of injuries is occurring in 102 `Vibo Valentia` with about 0.00124. However, the three province with the lowest frequency of injuries are located in south Italy while the province with high frequency of injuries are in the south and center of Italy.
+The graph illustrate the proportions of accidents by province, we can see that 0.065 of accidents are occurring from 15 `province of Milan` which is the highest proportion of accidents compared to the other provinces, the second highest proportion of accidents are occurred in 58 `Rome` with a proportion of accidents equals to 0.054, the third province with high proportion of accidents is 1 `Turin`, while the province with the lowest proportion of accidents is 94 `Isernia` which is about 0.00086, the second lowest proportion of accidents is occurred in 101 `Crotone` with proportion of accidents equals to 0.00115 and the third lowest frequent of accidents is occurring in 102 `Vibo Valentia` with about 0.00124. However, the three province with the lowest frequency of accidents are located in south Italy while the province with high frequency of accidents are in the south and center of Italy.
 
 
 ## Location of the incidents (Map)
 
 ![Number of Injuries across Italy](Rplot.png){#fig-penguins}
 
-The map illustrates the number of injuries distributed across all Italian provinces, and as we see before the provinces with high number of injuries are; Milan, Roma and Turin, while the provinces with less number of injuries are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of injuries are located in northren and center Italy and the lowest number of injuries are located in southern Italy.
+The map illustrates the number of accidents distributed across all Italian provinces, and as noted above the provinces with highest number of accidents are; Milan, Roma and Turin, while the provinces with lowest number of accidents are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of accidents are located in northren and center Italy and the lowest number of accidents are located in southern Italy.
 
 
 # Incidents Rates
@@ -340,8 +490,9 @@ reactable(
   )
 )
 ```
-An alternative way to analyse the information on accidents at work is to express the number of accidents in relation to the number of persons employed; this produces a ratio referred to as the incidence rate. In the Figure below, simple incidence rates are shown relating the number of accidents to the overall number of persons employed. For any given year, these statistics give an indication of the likelihood that someone had an accident.
-In the years 2017 - 2021, the number of accidents per 100 employed persons ranged from less than 3.26 in 2021 to 3.89 accidents per 100 persons employed in 2017. The highest incidence rates among the this years were recorded in 2017 and 2018, with 3.89 and 3.78 accidents per 100 persons employed respectively.
+
+An alternative way to analyse the information on accidents at work is to express the number of accidents in relation to the number of persons employed; this produces a ratio referred to as the incidence rate or incedent index. In the Figure below, simple incidence rates are shown relating the number of accidents to the overall number of persons employed. For any given year, these statistics give an indication of the likelihood that someone had an accident.
+In the years 2017 to 2021, the number of accidents per 100 employed persons ranged from less than 3.26 in 2021 to 3.89 accidents per 100 persons employed in 2017. The highest incidence rates among this years were recorded in 2017 and 2018, with 3.89 and 3.78 accidents per 100 persons employed respectively.
 
 ```{r}
 p <- ggplot(year_d, aes(Year, accident_Indx, group=Year, colour=Year)) + 
@@ -356,7 +507,7 @@ ggplotly(p)
 ```
 
 
-From the figure we can tell that, 2017 has the highest rate of incidents while 2021 has the lowest rate of incidents. However, the frequency of incidents has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of incidents has declined from 2020 to 2021 by -1.47%. In general, the frequency of incidents is showing a declining trend over the past 5 years period except the year 2019 there was an increase by 0.081% from the year 2018 to 2019.
+From the figure we can tell that, 2017 has the highest rate of incidents while 2021 has the lowest rate of incidents. However, the frequency of incidents has decreased dramatically by -11.18% from 2019 to 2020 and this is quit reasonable due to the pandemic (Covid 19), and the frequent of incidents has declined from 2020 to 2021 by -1.47%. In general, the frequency of incidents is showing a declining trend over the past 5 years period except the year 2019, there was an increase by 0.081% from the year 2018 to 2019.
 
 
 
@@ -391,7 +542,7 @@ ggplot(data_17,
         subtitle = "Data - 2017") 
 ```
 
-Within the economic sectors,`E` water supply; sewerage, waste management and remediation activities, `N` rental,travel agencies, business support services, `H` transportation and storage, `C24` Steel industry and `I` Accommodation and catering service activities sectors together accounted for around  (21.16 %) of all accidents at works in 2017. More than (4.98 %) of all accidents at work in Italy took place within the water supply; sewerage, waste management and remediation activities sector, while the rental,travel agencies, business support services (4.24 %) had the next highest share. Transportation and storage sector (4.06 %), Steel industry with index of (4.03 %), Accommodation and catering service activities (3.85 %). The sectors with low frequent of accidents are; `J` Information and communication services (0.74%), `K` Financial and insurance activities (0.745), `C26` Manufacturing of telecommunications equipment (0.85%) and `D` Supply of electricity, gas, steam and air conditioning (0.97%).
+Within the economic sectors,`E` water supply; sewerage, waste management and remediation activities, `N` rental,travel agencies, business support services, `H` transportation and storage, `C24` Steel industry and `I` Accommodation and catering service activities sectors are characterized as sectors with high incidents rate compared to all accidents at works in 2017. More than (4.98 %) of all accidents at work in Italy took place within the water supply; sewerage, waste management and remediation activities sector, while the rental,travel agencies, business support services (4.24 %) had the next highest share. Transportation and storage sector (4.06 %), Steel industry with index of (4.03 %), Accommodation and catering service activities (3.85 %). The sectors with low frequent of accidents are; `J` Information and communication services (0.74%), `K` Financial and insurance activities (0.745), `C26` Manufacturing of telecommunications equipment (0.85%) and `D` Supply of electricity, gas, steam and air conditioning (0.97%).
 
 
 ### Rates of incidents in 2018
@@ -494,7 +645,8 @@ ggplot(tarif_inail, aes(fill=Tariffa_INAIL, y = Index, x=Year)) +
        x = "Years",
        y = "Index of injuries")
 ```
-Figure above presents an analysis of data according to large tariff group across the years 2017 and 2021, the groups that are characterized with high frequency of incidents are `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining.
+
+Figure above presents an analysis of data according to large tariff group across the years 2017 to 2021, the groups that are characterized with high frequency of incidents are `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining.
 
 
 ```{r}
@@ -508,7 +660,7 @@ p <- p + geom_point() +
 ggplotly(p)
 ```
 
-The figure above shows that years between 2017 - 2018 were characterized generally with highest incident rates. As noted before the groups with relatively high index of incidents are  `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining. In 2020 the highest index of incidents is recorded by agricultural processing and food it was about 58.22%. For the energy and communications, the highest record of incidents is registered in 2021 which is about 52.88%. Considering rock and glass mining, it hits the highest record in 2019 with an index of 31.83%. The rest of the groups have a relatively a low incident index ranging from 2.255 recorded from `GG2` chemical, paper and leather group to 0.32% recorded from  `GG0` other activities.
+The figure above shows that years between 2017 - 2018 were characterized generally with highest incident rates. As noted before the groups with relatively high index of incidents are  `GG1` agricultural processing and food, `GG4` energy and communications and `GG7` rock and glass mining. In 2020 the highest index of incidents is recorded by agricultural processing and food and it was about 58.22%. For the energy and communications, the highest record of incidents is registered in 2021 which is about 52.88%. Considering rock and glass mining, it hits the highest record in 2019 with an index of 31.83%. The rest of the groups have a relatively low incident indices ranging from 2.255 recorded from `GG2` chemical, paper and leather group to 0.32% recorded from  `GG0` other activities.
 
 ## Index of incidents by management tariff
 
@@ -528,7 +680,7 @@ ggplot(gestione, aes(fill=Gestione_tariffaria, y = Index, x=Year)) +
        y = "Index of injuries")
 ```
 
-Figure above presents an analysis of data according to management tariff across the years 2017 and 2021, the activities that are characterized with high frequency of incidents are industry and tertiary, except in the year 2020 which has the highest incident rate with respect to all years.
+Figure above presents an analysis of data according to management tariff across the years 2017 to 2021, the activities that are characterized with high frequency of incidents are industry and tertiary, except in the year 2020 other activities has the highest incident rate with respect to all years.
 
 
 ```{r}
@@ -542,7 +694,7 @@ p <- p + geom_point() +
 ggplotly(p)
 ```
 
-Analysing the figure above, Industry, crafts and tertiary follow the same patterns of the incidents index between the years 2017 - 2021 except for the year 2020 tertiary showed an increase in the number of incidents 2.92% while industry and crafts showed a decline  1.99% and 1.72% respectively. For the other activities, the incident index increased dramatically (4.8%) and this is the highest index recorded between 2017 and 2021.
+Analysing the figure above, Industry, crafts and tertiary follow the same patterns of the incidents index between the years 2017 - 2021 except for the year 2020 tertiary showed an increase in the number of incidents (2.92%), while industry and crafts showed a decline (1.99%) and (1.72%) respectively. For the other activities, the incident index increased dramatically (4.8%) and this is the highest index recorded between 2017 and 2021.
 
 
 # Analyses of impairment, indemnity, indemnified days
@@ -574,37 +726,7 @@ ggplot(idemnity,
 sort(prop.table(table(Ita_Regions$Indennizzo)), decreasing = TRUE)
 ```
 
-The figure above illustrates the types of indemnity resulting from the injuries, which are `temporary`, `capital`, `direct annuity`and `survivors' annuity`. From the graph we can see that 52% of injuries indemnity are considered to be `TE` temporary, while 4% of the indemnity is considered as capital `CA` and 1% are going directly to annuity `RD` and about 0.1% are survivors' annuity `rs`. 
-
-## Admministrative decision of the fatal outcome
-
-```{r}
-fetal <- Ita_Regions %>%
-  count(DefinizioneAmministrativaEsitoMortale) %>%
-  mutate(pct = n / sum(n),
-         pctlabel = paste0(round(pct*100), "%"))
-
-# plot the bars as percentages, 
-# in decending order with bar labels
-ggplot(fetal, 
-       aes(x = reorder(DefinizioneAmministrativaEsitoMortale, -pct),
-           y = pct)) + 
-  geom_bar(stat = "identity", 
-           fill = "indianred3", 
-           color = "black") +
-  geom_text(aes(label = pctlabel), 
-            vjust = -0.25) +
-  scale_y_continuous(labels = percent) +
-  labs(x = "Indemnity", 
-       y = "Percent", 
-       title  = "Admministrative decision of the fatal outcome")
-```
-
-
-```{r}
-sort(prop.table(table(Ita_Regions$DefinizioneAmministrativaEsitoMortale)), decreasing = TRUE)
-```
-The figure above shows the decisions about the injuries, which are `positive`, `negative` or `in investigation`. From the figure we analye that 99.78% of the injuries are not defined. However, the injuries with a fatal decision are the positive cases which is 0.125% of the total injuries, while the injuries that are not fatal which is the negative cases are 0.092% of the injuries and the injuries that its outcome are not decided yet `in invstigation` are 0.003% of the total injuries
+The figure above illustrates the types of indemnity resulting from accidents, which are `temporary`, `capital`, `direct annuity`and `survivors' annuity`. From the graph we can see that 52% of  indemnified incidents are considered to be `TE` temporary, while 4%  is considered as capital `CA` and 1% is direct annuity `RD` and about 0.1% are survivors' annuity `rs`. 
 
 
 # Total and permanent disability
@@ -612,27 +734,16 @@ The figure above shows the decisions about the injuries, which are `positive`, `
 Total permanent disability (TPD) is a condition in which an individual is no longer able to work due to injuries. Total permanent disability, also called permanent total disability, applies to cases in which the individual may never be able to work again.
 
 
-
 ## Degree of impairment > 60
 
 ```{r}
-data(Ita_Regions)
-GradoMenomazione_60 <- Ita_Regions[, c("GradoMenomazione","Indennizzo", "GiorniIndennizzati")] 
-
-GradoMenomazione_60 <-  GradoMenomazione_60 %>%
-                       filter(GradoMenomazione > 60)
-```
-
-
-
-The table below shows information about the degree of impairment when it is more than 60:
-```{r}
-reactable(GradoMenomazione_60, searchable = TRUE, minRows = 10)
+grad_60 <- data_ita %>%
+  filter(GradoMenomazione > 60)
 ```
 
 
 ```{r}
-grad_60 <- GradoMenomazione_60 %>%
+grad_60 <- grad_60 %>%
   count(Indennizzo) %>%
   mutate(pct = n / sum(n),
          pctlabel = paste0(round(pct*100), "%"))
@@ -653,58 +764,19 @@ ggplot(grad_60,
        title  = "Injuries with respect to  by Indemnity")
 ```
 
-The analysis of the degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 60 as TPA, then from the table above we can see that 94% of the workers with degree of impairment greater than 60 are categorized as immediate annuity `RD`, which offers an immediate income to the annuitant, and 6% are categorized as survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. 
-
-To check if there is a relation between the days of compensation and indemnity a Biserial correlation test is applied.
-
-```{r}
-cor <- round(biserial.cor(GradoMenomazione_60$GiorniIndennizzati, 
-             GradoMenomazione_60$Indennizzo), 4)
-```
-
-From the test we can see that there is almost no correlation (`r cor`) between the days compensated and indemnity.
-
-```{r}
-ggplot(GradoMenomazione_60, 
-       aes(x = factor(Indennizzo,
-                      labels = c("Dirict annuity",
-                                 "Survivors' annuity")), 
-           y = GiorniIndennizzati, 
-           color = Indennizzo)) +
-  geom_boxplot(size=1,
-               outlier.shape = 1,
-               outlier.color = "black",
-               outlier.size  = 3) +
-  geom_jitter(alpha = 0.5, 
-              width=.2) + 
-  #scale_y_continuous(label = dollar) +
-  labs(title = "Days of compensation according to indemnity",
-       x = "",
-       y = "") +
-  theme_minimal() +
-  theme(legend.position = "none") +
-  coord_flip()
-```
-
+The analysis of the degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 60 as TPA, then from the figure above we can see that 94% of the workers with degree of impairment greater than 60 are categorized as immediate annuity `RD` beneficiaries, and in this case the insurance comapny offers an immediate income to the annuitant, and 6% are categorized as survivors' annuity `DS` beneficiaries, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. 
 
 ## Degree of impairment > 40
 
 ```{r}
-data(Ita_Regions)
-GradoMenomazione_40 <- Ita_Regions[, c("GradoMenomazione","Indennizzo", "GiorniIndennizzati")] 
-
-GradoMenomazione_40 <-  GradoMenomazione_40 %>%
-                       filter(GradoMenomazione > 40)
+grad_40 <- data_ita %>%
+  filter(GradoMenomazione > 40)
 ```
 
-The table below shows information about the degree of impairment when it is more than 60:
+
 
 ```{r}
-reactable(GradoMenomazione_40, searchable = TRUE, minRows = 10)
-```
-
-```{r}
-grad_40 <- GradoMenomazione_40 %>%
+grad_40 <- grad_40 %>%
   count(Indennizzo) %>%
   mutate(pct = n / sum(n),
          pctlabel = paste0(round(pct*100), "%"))
@@ -725,36 +797,11 @@ ggplot(grad_40,
        title  = "Injuries with respect to  by Indemnity")
 ```
 
-The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 40 as TPA, then from the table above we can see that 98% of the workers with degree of impairment greater than 40 are categorized as immediate annuity `RD`, which offers an immediate income to the annuitant, and 2% are categorized as survivors' annuity `DS`, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. However, when the insurance company decrease the threshold of the degree of impairment to 40, the number of persons defined as TPD is 2349, while when the threshold of the degree of impairment is 60, the number of persons defined as TPD is 856. 
+The analysis of degree of impairment is crucial in defining the total and permanent disability, here if the insurance company based on this dataset decide to identify a person with degree of impairment greater than 40 as TPA, then from the figure above we can see that 98% of the workers with degree of impairment greater than 40 are categorized as immediate annuity `RD`beneficiaries, which offers an immediate income to the annuitant, and 2% are categorized as survivors' annuity `DS`beneficiaries, which allows the annuitant to ensure after death, a continuous lifetime annuity for their dependents. However, when the insurance company decrease the threshold of the degree of impairment to 40, the number of persons defined as TPD is 2349, and when the threshold of the degree of impairment is 60, the number of persons defined as TPD is 856. 
 
 
-```{r}
-corr <- round(biserial.cor(GradoMenomazione_40$GiorniIndennizzati,
-                     GradoMenomazione_40$Indennizzo), 4)
-```
 
-From the test we can see that there is almost no correlation (`r corr`) between the days compensated and indemnity.
-```{r}
-ggplot(GradoMenomazione_40, 
-       aes(x = factor(Indennizzo,
-                      labels = c("Dirict annuity",
-                                 "Survivors' annuity")), 
-           y = GiorniIndennizzati, 
-           color = Indennizzo)) +
-  geom_boxplot(size=1,
-               outlier.shape = 1,
-               outlier.color = "black",
-               outlier.size  = 3) +
-  geom_jitter(alpha = 0.5, 
-              width=.2) + 
-  #scale_y_continuous(label = dollar) +
-  labs(title = "Days of compensation according to indemnity",
-       x = "",
-       y = "") +
-  theme_minimal() +
-  theme(legend.position = "none") +
-  coord_flip()
-```
+
 
 
 
