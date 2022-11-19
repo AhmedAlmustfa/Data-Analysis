@@ -111,11 +111,10 @@ library(tidyr)
 library(treemapify)
 library(reactable)
 library(ltm)
-library(highcharter)
-library(purrr)
-library(geojsonio)
-library(httr)
 library(readxl)
+library(rnaturalearth)
+library(mapview)
+library(tmap)
 ```
 
 *Load the data*
@@ -457,7 +456,45 @@ The graph illustrate the proportions of accidents by province, we can see that 0
 
 ## Location of the incidents (Map)
 
-![Number of Injuries across Italy](Rplot.png){#fig-penguins}
+```{r}
+## Italy map
+italy_map <- ne_states(country = "Italy", returnclass = "sf")
+
+italy_map <- italy_map %>%
+  dplyr::select(province = name, region, geometry)
+# province with condice
+prov <- read.csv("map.csv")
+
+# extract the number of acidentds
+accidents <- Ita_Regions %>%
+  count(LuogoAccadimento)
+
+italy_map <- italy_map %>%
+  dplyr::left_join(prov, by = "province")
+
+italy_map_province <- italy_map %>%
+  dplyr::left_join(accidents, by = "LuogoAccadimento")
+
+```
+
+```{r}
+tm_shape(italy_map_province) +
+  tm_polygons(col = "n",
+              n = 10,
+              title = "Total accidents",
+              palette = "Reds") +
+  tm_style("cobalt") +
+  tm_layout(
+    title= "Total accidents by province",
+    title.position = c('left', 'top'),
+    legend.title.size = 1,
+    legend.text.size = 0.6,
+    legend.position = c(0.7, 0.6),
+    inner.margins = c(0, .1, .1, .22)) +
+  tm_credits(text = "Number of accidents | Data: Italy 2017 -2021",
+             position = c("left", "bottom"))
+```
+
 
 The map illustrates the number of accidents distributed across all Italian provinces, and as noted above the provinces with highest number of accidents are; Milan, Roma and Turin, while the provinces with lowest number of accidents are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of accidents are located in northren and center Italy and the lowest number of accidents are located in southern Italy.
 
