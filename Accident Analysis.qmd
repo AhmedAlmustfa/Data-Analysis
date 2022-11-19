@@ -3,10 +3,10 @@ title: "Accidents Analysis Across Italy"
 format:
   html:
     theme: flatly
-    code-fold: true
+    execute:
+    echo: false
     toc: true
     number-sections: true
-    #code-copy: true
 ---
 
 # Introduction
@@ -91,17 +91,24 @@ The rest of the report is organized in the following, section two is the discuss
 
 :::[.incremental]
 
-* accidentr
-* ggplot
-* dplyr
-* scales
-* tidyr
-* treemapify
 * plotly
+* library(accidentr)
+* library(ggplot2)
+* library(plotly)
+* library(dplyr)
+* library(scales)
+* library(tidyr)
+* library(treemapify)
+* library(reactable)
+* library(ltm)
+* library(readxl)
+* library(rnaturalearth)
+* library(mapview)
+* library(tmap)
 
 :::
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(accidentr)
 library(ggplot2)
 library(plotly)
@@ -456,6 +463,8 @@ The graph illustrate the proportions of accidents by province, we can see that 0
 
 ## Location of the incidents (Map)
 
+### Number of accidents by province
+
 ```{r}
 ## Italy map
 italy_map <- ne_states(country = "Italy", returnclass = "sf")
@@ -469,6 +478,8 @@ prov <- read.csv("map.csv")
 accidents <- Ita_Regions %>%
   count(LuogoAccadimento)
 
+colnames(accidents) <- c("LuogoAccadimento", "total")
+
 italy_map <- italy_map %>%
   dplyr::left_join(prov, by = "province")
 
@@ -478,25 +489,28 @@ italy_map_province <- italy_map %>%
 ```
 
 ```{r}
-tm_shape(italy_map_province) +
-  tm_polygons(col = "n",
-              n = 10,
-              title = "Total accidents",
-              palette = "Reds") +
-  tm_style("cobalt") +
-  tm_layout(
-    title= "Total accidents by province",
-    title.position = c('left', 'top'),
-    legend.title.size = 1,
-    legend.text.size = 0.6,
-    legend.position = c(0.7, 0.6),
-    inner.margins = c(0, .1, .1, .22)) +
-  tm_credits(text = "Number of accidents | Data: Italy 2017 -2021",
-             position = c("left", "bottom"))
+italy_map_province %>%
+  mapview(zcol = "total", col.regions = viridisLite::turbo)
 ```
 
 
 The map illustrates the number of accidents distributed across all Italian provinces, and as noted above the provinces with highest number of accidents are; Milan, Roma and Turin, while the provinces with lowest number of accidents are; Isernia, Crotone and Vibo Valentia. The map confirmed that provinces with the highest number of accidents are located in northren and center Italy and the lowest number of accidents are located in southern Italy.
+
+### Number of accidents by region
+
+```{r}
+italy_map_region <- italy_map %>%
+  group_by(region) %>%
+  summarise(n = n())
+df3 <- read.csv("Regions.csv")
+map_region <- italy_map_region %>%
+  left_join(df3, by = "region")
+
+map_region %>%
+  mapview(zcol = "total", col.regions = viridisLite::turbo)
+```
+
+An alternative way to analyse the data is by aggregating the data by region. From the map, the region with high number of incidents at work is Lombardy and the second region with high number of incidents is Veneto and the third region with considerable number of incidents is Emeglia-Romagna. However, regions with low frequent of accidents are Trentino-Alto-Adge, Molise and Basilicata. 
 
 
 # Incidents Rates
